@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Teste</title>
+
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-image: url('<%= asset_path("fundo.png") %>');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="color: white; text-align: center;">Use as setas &larr; &rarr; para mover o Diddy</h1>
+    <canvas id="diddy-canvas" width="800" height="450" style="display: block; margin: 0 auto;"></canvas>
+
+    <script>
+      (function() {
+        const canvas = document.getElementById('diddy-canvas');
+        const ctx = canvas.getContext('2d');
+
+        const sprite = new Image();
+        sprite.src = '<%= asset_path("diddy.png") %>';
+
+        // Valores iniciais (podemos ajustar depois)
+        // Diddy é menor do que 64x64, então reduzimos o tamanho do quadro
+        const frameWidth = 36;
+        const frameHeight = 40;
+        const columns = 12; // mais colunas, quadros menores
+        const walkFrames = 8; // quantidade de quadros da animação de andar
+        const rowRight = 6;   // linha da animação andando para a direita
+        const rowLeft = 1;    // linha da animação andando para a esquerda
+
+        let x = canvas.width / 2;
+        let y = canvas.height - frameHeight - 10;
+        let currentFrame = 0;
+        let direction = 'right'; // 'left' ou 'right'
+        let walking = false;
+
+        const speed = 3;            // velocidade de movimento
+        const frameDuration = 80;   // ms por frame de animação
+        let lastFrameTime = 0;
+
+        const keys = { left: false, right: false };
+
+        window.addEventListener('keydown', function(e) {
+          if (e.key === 'ArrowLeft') {
+            keys.left = true;
+            direction = 'left';
+            walking = true;
+          } else if (e.key === 'ArrowRight') {
+            keys.right = true;
+            direction = 'right';
+            walking = true;
+          }
+        });
+
+        window.addEventListener('keyup', function(e) {
+          if (e.key === 'ArrowLeft') {
+            keys.left = false;
+          } else if (e.key === 'ArrowRight') {
+            keys.right = false;
+          }
+
+          // Se nenhuma tecla está pressionada, para de andar
+          if (!keys.left && !keys.right) {
+            walking = false;
+            currentFrame = 0; // volta para o primeiro quadro
+          }
+        });
+
+        function update(delta) {
+          if (keys.left) {
+            x -= speed;
+          }
+          if (keys.right) {
+            x += speed;
+          }
+
+          // Mantém dentro do canvas
+          if (x < 0) x = 0;
+          if (x > canvas.width - frameWidth) x = canvas.width - frameWidth;
+
+          // Atualiza frame de animação
+          if (walking) {
+            lastFrameTime += delta;
+            if (lastFrameTime >= frameDuration) {
+              lastFrameTime = 0;
+              currentFrame = (currentFrame + 1) % walkFrames;
+            }
+          }
+        }
+
+        function draw() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          const row = direction === 'right' ? rowRight : rowLeft;
+          const sx = (currentFrame % columns) * frameWidth;
+          const sy = row * frameHeight;
+
+          ctx.drawImage(
+            sprite,
+            sx, sy, frameWidth, frameHeight,
+            x, y, frameWidth, frameHeight
+          );
+        }
+
+        let lastTimestamp = 0;
+
+        function loop(timestamp) {
+          const delta = timestamp - lastTimestamp;
+          lastTimestamp = timestamp;
+
+          update(delta);
+          if (sprite.complete) {
+            draw();
+          }
+
+          requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>
