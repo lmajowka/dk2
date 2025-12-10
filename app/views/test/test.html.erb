@@ -37,8 +37,7 @@
         const frameHeight = 40;
         const columns = 12; // mais colunas, quadros menores
         const walkFrames = 8; // quantidade de quadros da animação de andar
-        const rowRight = 6;   // linha da animação andando para a direita
-        const rowLeft = 1;    // linha da animação andando para a esquerda
+        const rowRight = 6;   // linha da animação andando para a direita (usaremos esta para os dois lados)
 
         let x = canvas.width / 2;
         let y = canvas.height - frameHeight - 10;
@@ -103,15 +102,32 @@
         function draw() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          const row = direction === 'right' ? rowRight : rowLeft;
+          // Usamos sempre a mesma linha de animação (direita)
           const sx = (currentFrame % columns) * frameWidth;
-          const sy = row * frameHeight;
+          const sy = rowRight * frameHeight;
 
-          ctx.drawImage(
-            sprite,
-            sx, sy, frameWidth, frameHeight,
-            x, y, frameWidth, frameHeight
-          );
+          ctx.save();
+
+          if (direction === 'left') {
+            // Espelha horizontalmente usando scale(-1, 1)
+            // Transladamos para que o personagem continue na mesma posição visual
+            ctx.translate(x + frameWidth, y);
+            ctx.scale(-1, 1);
+
+            ctx.drawImage(
+              sprite,
+              sx, sy, frameWidth, frameHeight,
+              0, 0, frameWidth, frameHeight
+            );
+          } else {
+            ctx.drawImage(
+              sprite,
+              sx, sy, frameWidth, frameHeight,
+              x, y, frameWidth, frameHeight
+            );
+          }
+
+          ctx.restore();
         }
 
         let lastTimestamp = 0;
