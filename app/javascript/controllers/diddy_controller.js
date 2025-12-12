@@ -1,11 +1,13 @@
 import { Controller } from "@hotwired/stimulus"
 
 const DEFAULT_MAP = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,1,1,1,0]
 ]
 
 export default class extends Controller {
@@ -21,7 +23,7 @@ export default class extends Controller {
     this.canvas = this.element
     this.ctx = this.canvas.getContext("2d")
 
-    this.grid = this.hasMapValue ? this.mapValue : null
+    this.grid = this.hasMapValue ? this.mapValue : DEFAULT_MAP
 
     this.background = new Image()
     this.background.src = this.backgroundUrlValue
@@ -34,12 +36,11 @@ export default class extends Controller {
       this.tileWidth = this.tile.naturalWidth || this.tile.width
       this.tileHeight = this.tile.naturalHeight || this.tile.height
 
-      if (!this.grid) {
-        this.buildTestGround()
-        this.groundY = this.canvas.height - this.tileHeight
-        this.groundCols = Math.ceil(this.canvas.width / this.tileWidth)
-        this.respawn()
+      if (this.grid) {
+        this.deathY = this.grid.length * this.tileHeight + 200
       }
+
+      this.respawn()
     }
     this.tile.onerror = () => {
       console.error("Failed to load tile image", this.tileUrlValue)
@@ -192,43 +193,48 @@ export default class extends Controller {
       return cols * this.tileWidth
     }
 
-    if (this.ground) {
-      return this.ground.length * this.tileWidth
-    }
-
-    const levelCols = this.hasLevelColsValue ? this.levelColsValue : 80
-    return levelCols * this.tileWidth
+    return null
   }
 
-  buildTestGround() {
-    const levelCols = this.hasLevelColsValue ? this.levelColsValue : 80
-    this.ground = new Array(levelCols).fill(1)
+  tileAt(row, col) {
+    if (!this.grid) return 0
+    if (row < 0 || col < 0) return 0
+    if (row >= this.grid.length) return 0
+    if (col >= this.grid[0].length) return 0
+    return this.grid[row][col]
+  }
 
-    const holeStart = Math.min(levelCols - 1, 30)
-    const holeWidth = 6
-    for (let i = 0; i < holeWidth; i++) {
-      const col = holeStart + i
-      if (col >= 0 && col < this.ground.length) {
-        this.ground[col] = 0
+  isSolid(row, col) {
+    return this.tileAt(row, col) === 1
+  }
+
+  findSpawnY(worldX) {
+    if (!this.tileWidth || !this.tileHeight) return null
+    if (!this.grid) return null
+
+    const footInset = 6
+    const colLeft = Math.floor((worldX + footInset) / this.tileWidth)
+    const colRight = Math.floor((worldX + this.frameWidth - footInset) / this.tileWidth)
+
+    for (let row = this.grid.length - 1; row >= 0; row--) {
+      if (this.isSolid(row, colLeft) || this.isSolid(row, colRight)) {
+        return row * this.tileHeight - this.frameHeight
       }
     }
-  }
 
-  hasGroundAt(col) {
-    if (!this.ground) return true
-    if (col < 0 || col >= this.ground.length) return false
-    return this.ground[col] === 1
+    return null
   }
 
   resolveGroundCollision() {
     if (!this.tileWidth || !this.tileHeight) return
-    if (this.groundY == null) return
+    if (!this.grid) return
 
-    const feetY = this.worldY + this.frameHeight
-    if (feetY < this.groundY) {
+    if (this.vy < 0) {
       this.onGround = false
       return
     }
+
+    const feetY = this.worldY + this.frameHeight
 
     const footInset = 6
     const footLeftX = this.worldX + footInset
@@ -236,14 +242,15 @@ export default class extends Controller {
 
     const leftCol = Math.floor(footLeftX / this.tileWidth)
     const rightCol = Math.floor(footRightX / this.tileWidth)
+    const rowUnder = Math.floor(feetY / this.tileHeight)
 
-    const supported = this.hasGroundAt(leftCol) || this.hasGroundAt(rightCol)
+    const supported = this.isSolid(rowUnder, leftCol) || this.isSolid(rowUnder, rightCol)
     if (!supported) {
       this.onGround = false
       return
     }
 
-    this.worldY = this.groundY - this.frameHeight
+    this.worldY = rowUnder * this.tileHeight - this.frameHeight
     this.vy = 0
     this.onGround = true
   }
@@ -259,13 +266,17 @@ export default class extends Controller {
   respawn() {
     this.cameraX = 0
     this.worldX = 50
-    if (this.groundY != null) {
-      this.worldY = this.groundY - this.frameHeight
+
+    const spawnY = this.findSpawnY(this.worldX)
+    if (spawnY != null) {
+      this.worldY = spawnY
+      this.onGround = true
     } else {
       this.worldY = this.canvas.height - this.frameHeight - 10
+      this.onGround = false
     }
+
     this.vy = 0
-    this.onGround = true
     this.updateCamera()
     this.y = this.worldY
   }
@@ -321,25 +332,6 @@ export default class extends Controller {
                 this.tileHeight,
               )
             }
-          }
-        }
-      } else {
-        const groundY = this.groundY ?? this.canvas.height - this.tileHeight
-
-        const levelWidthPx = this.getLevelWidthPx()
-        const worldCols = levelWidthPx != null ? Math.ceil(levelWidthPx / this.tileWidth) : 0
-        const startCol = Math.max(0, Math.floor(this.cameraX / this.tileWidth))
-        const endCol = Math.min(worldCols, startCol + Math.ceil(this.canvas.width / this.tileWidth) + 2)
-
-        for (let col = startCol; col < endCol; col++) {
-          if (this.hasGroundAt(col)) {
-            this.ctx.drawImage(
-              this.tile,
-              col * this.tileWidth - this.cameraX,
-              groundY,
-              this.tileWidth,
-              this.tileHeight,
-            )
           }
         }
       }
