@@ -1,0 +1,27 @@
+<%= form_with model: level do |f| %>
+  <% if level.errors.any? %>
+    <div>
+      <ul>
+        <% level.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name %>
+    <%= f.text_field :name %>
+  </div>
+
+  <div
+    data-controller="map-editor"
+    data-map-editor-initial-map-value='<%= level.map.to_json %>'>
+    <%= f.hidden_field :map, value: level.map.to_json, data: { map_editor_target: "input" } %>
+    <div data-map-editor-target="grid"></div>
+  </div>
+
+  <div>
+    <%= f.submit %>
+  </div>
+<% end %>

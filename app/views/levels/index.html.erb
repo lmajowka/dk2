@@ -1,0 +1,13 @@
+<h1>Levels</h1>
+
+<p><%= link_to "New level", new_level_path %></p>
+
+<ul>
+  <% @levels.each do |level| %>
+    <li>
+      <%= link_to level.name, level_path(level) %>
+      <%= link_to "Edit", edit_level_path(level) %>
+      <%= button_to "Delete", level_path(level), method: :delete, form: { data: { turbo_confirm: "Delete?" } } %>
+    </li>
+  <% end %>
+</ul>

@@ -1,0 +1,16 @@
+<h1><%= @level.name %></h1>
+
+<p>
+  <%= link_to "Edit", edit_level_path(@level) %>
+  <%= link_to "Back", levels_path %>
+</p>
+
+<canvas
+  width="800"
+  height="450"
+  style="display: block; border: 2px solid red"
+  data-controller="diddy"
+  data-diddy-background-url-value="<%= asset_path(\"fundo.jpg\") %>"
+  data-diddy-sprite-url-value="<%= asset_path(\"diddy.png\") %>"
+  data-diddy-tile-url-value="<%= asset_path(\"tile.png\") %>"
+  data-diddy-map-value='<%= @level.map.to_json %>'></canvas>

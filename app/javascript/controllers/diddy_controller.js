@@ -37,7 +37,8 @@ export default class extends Controller {
       this.tileHeight = this.tile.naturalHeight || this.tile.height
 
       if (this.grid) {
-        this.deathY = this.grid.length * this.tileHeight + 200
+        const mapHeightPx = this.grid.length * this.tileHeight
+        this.mapOffsetY = Math.max(0, this.canvas.height - mapHeightPx)
       }
 
       this.respawn()
@@ -68,6 +69,7 @@ export default class extends Controller {
     this.gravity = 1800
     this.jumpVelocity = 700
     this.deathY = this.canvas.height + 200
+    this.mapOffsetY = 0
     this.maxLives = 3
     this.lives = this.maxLives
     this.currentFrame = 0
@@ -218,7 +220,7 @@ export default class extends Controller {
 
     for (let row = this.grid.length - 1; row >= 0; row--) {
       if (this.isSolid(row, colLeft) || this.isSolid(row, colRight)) {
-        return row * this.tileHeight - this.frameHeight
+        return this.mapOffsetY + row * this.tileHeight - this.frameHeight
       }
     }
 
@@ -242,7 +244,7 @@ export default class extends Controller {
 
     const leftCol = Math.floor(footLeftX / this.tileWidth)
     const rightCol = Math.floor(footRightX / this.tileWidth)
-    const rowUnder = Math.floor(feetY / this.tileHeight)
+    const rowUnder = Math.floor((feetY - this.mapOffsetY) / this.tileHeight)
 
     const supported = this.isSolid(rowUnder, leftCol) || this.isSolid(rowUnder, rightCol)
     if (!supported) {
@@ -250,7 +252,7 @@ export default class extends Controller {
       return
     }
 
-    this.worldY = rowUnder * this.tileHeight - this.frameHeight
+    this.worldY = this.mapOffsetY + rowUnder * this.tileHeight - this.frameHeight
     this.vy = 0
     this.onGround = true
   }
@@ -327,7 +329,7 @@ export default class extends Controller {
               this.ctx.drawImage(
                 this.tile,
                 col * this.tileWidth - this.cameraX,
-                row * this.tileHeight,
+                this.mapOffsetY + row * this.tileHeight,
                 this.tileWidth,
                 this.tileHeight,
               )
