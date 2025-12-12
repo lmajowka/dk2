@@ -36,6 +36,13 @@ export default class extends Controller {
       this.tileWidth = this.tile.naturalWidth || this.tile.width
       this.tileHeight = this.tile.naturalHeight || this.tile.height
 
+      if (this.grid && this.tileHeight) {
+        const maxVisibleRows = Math.floor(this.canvas.height / this.tileHeight)
+        if (maxVisibleRows > 0 && this.grid.length > maxVisibleRows) {
+          this.grid = this.grid.slice(0, maxVisibleRows)
+        }
+      }
+
       if (this.grid) {
         const mapHeightPx = this.grid.length * this.tileHeight
         this.mapOffsetY = Math.max(0, this.canvas.height - mapHeightPx)

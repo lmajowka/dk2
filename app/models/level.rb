@@ -12,7 +12,7 @@ class Level < ApplicationRecord
   private
 
   def default_map
-    rows = 10
+    rows = 7
     cols = 24
 
     grid = Array.new(rows) { Array.new(cols, 0) }

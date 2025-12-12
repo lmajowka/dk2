@@ -9,13 +9,16 @@ export default class extends Controller {
   }
 
   connect() {
-    this.rows = this.hasRowsValue ? this.rowsValue : 10
-    this.cols = this.hasColsValue ? this.colsValue : 24
+    const defaultRows = this.hasRowsValue ? this.rowsValue : 7
+    const defaultCols = this.hasColsValue ? this.colsValue : 24
+    this.rows = defaultRows
+    this.cols = defaultCols
 
     if (this.hasInitialMapValue && Array.isArray(this.initialMapValue) && this.initialMapValue.length > 0) {
-      this.map = this.normalizeMap(this.initialMapValue)
+      const normalized = this.normalizeMap(this.initialMapValue)
+      this.map = normalized.length > defaultRows ? normalized.slice(0, defaultRows) : normalized
       this.rows = this.map.length
-      this.cols = this.map[0]?.length || this.cols
+      this.cols = this.map[0]?.length || defaultCols
     } else {
       this.map = this.buildEmptyMap(this.rows, this.cols)
       if (this.rows > 0) {
