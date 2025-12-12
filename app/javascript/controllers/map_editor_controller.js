@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["grid", "input"]
+  static targets = ["grid", "input", "colsInput"]
   static values = {
     rows: Number,
     cols: Number,
@@ -26,6 +26,44 @@ export default class extends Controller {
       }
     }
 
+    this.render()
+    this.syncInput()
+  }
+
+  setCols(event) {
+    const v = Number(event.target.value)
+    if (!Number.isFinite(v)) return
+    this.resizeCols(Math.max(1, Math.floor(v)))
+  }
+
+  addCols(event) {
+    const delta = Number(event.params.delta)
+    if (!Number.isFinite(delta)) return
+    this.resizeCols(Math.max(1, this.cols + Math.floor(delta)))
+  }
+
+  resizeCols(newCols) {
+    if (!Number.isFinite(newCols) || newCols < 1) return
+    if (!this.map || this.map.length === 0) return
+    if (newCols === this.cols) return
+
+    const lastRow = this.map.length - 1
+
+    for (let r = 0; r < this.map.length; r++) {
+      const row = this.map[r]
+      const fill = r === lastRow ? 1 : 0
+
+      if (row.length < newCols) {
+        row.push(...new Array(newCols - row.length).fill(fill))
+      } else if (row.length > newCols) {
+        row.splice(newCols)
+      }
+    }
+
+    this.cols = newCols
+    if (this.hasColsInputTarget) {
+      this.colsInputTarget.value = String(newCols)
+    }
     this.render()
     this.syncInput()
   }
@@ -58,7 +96,9 @@ export default class extends Controller {
     if (col >= this.map[0].length) return
 
     this.map[row][col] = this.map[row][col] === 1 ? 0 : 1
-    this.render()
+    if (event.currentTarget) {
+      event.currentTarget.style.background = this.map[row][col] === 1 ? "#e11d48" : "#111"
+    }
     this.syncInput()
   }
 

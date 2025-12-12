@@ -19,11 +19,22 @@ export default class extends Controller {
     levelCols: Number,
   }
 
+  buildDefaultMap() {
+    const rows = DEFAULT_MAP.length
+    const cols = this.hasLevelColsValue ? this.levelColsValue : (DEFAULT_MAP[0]?.length || 24)
+
+    const grid = Array.from({ length: rows }, () => new Array(cols).fill(0))
+    if (rows > 0) {
+      grid[rows - 1] = new Array(cols).fill(1)
+    }
+    return grid
+  }
+
   connect() {
     this.canvas = this.element
     this.ctx = this.canvas.getContext("2d")
 
-    this.grid = this.hasMapValue ? this.mapValue : DEFAULT_MAP
+    this.grid = this.hasMapValue ? this.mapValue : this.buildDefaultMap()
 
     this.background = new Image()
     this.background.src = this.backgroundUrlValue

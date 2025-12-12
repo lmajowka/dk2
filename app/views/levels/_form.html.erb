@@ -17,8 +17,24 @@
   <div
     data-controller="map-editor"
     data-map-editor-initial-map-value='<%= level.map.to_json %>'>
+    <div>
+      <label>
+        Colunas
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value="<%= (level.map[0]&.length || 24) %>"
+          data-map-editor-target="colsInput"
+          data-action="change->map-editor#setCols">
+      </label>
+      <button type="button" data-action="click->map-editor#addCols" data-map-editor-delta-param="50">+50</button>
+      <button type="button" data-action="click->map-editor#addCols" data-map-editor-delta-param="-50">-50</button>
+    </div>
     <%= f.hidden_field :map, value: level.map.to_json, data: { map_editor_target: "input" } %>
-    <div data-map-editor-target="grid"></div>
+    <div style="overflow-x: auto; max-width: 100%;">
+      <div data-map-editor-target="grid"></div>
+    </div>
   </div>
 
   <div>
