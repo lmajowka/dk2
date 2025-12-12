@@ -1,20 +1,51 @@
 import { Controller } from "@hotwired/stimulus"
 
+const DEFAULT_MAP = [
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+]
+
 export default class extends Controller {
   static values = {
     backgroundUrl: String,
     spriteUrl: String,
+    tileUrl: String,
+    map: Array,
   }
 
   connect() {
     this.canvas = this.element
     this.ctx = this.canvas.getContext("2d")
 
+    this.grid = this.hasMapValue ? this.mapValue : null
+
     this.background = new Image()
     this.background.src = this.backgroundUrlValue
 
     this.sprite = new Image()
     this.sprite.src = this.spriteUrlValue
+
+    this.tile = new Image()
+    this.tile.onload = () => {
+      this.tileWidth = this.tile.naturalWidth || this.tile.width
+      this.tileHeight = this.tile.naturalHeight || this.tile.height
+
+      if (!this.grid) {
+        this.groundY = this.canvas.height - this.tileHeight
+        this.groundCols = Math.ceil(this.canvas.width / this.tileWidth)
+        this.y = this.groundY - this.frameHeight
+      }
+    }
+    this.tile.onerror = () => {
+      console.error("Failed to load tile image", this.tileUrlValue)
+    }
+
+    if (this.hasTileUrlValue) {
+      this.tile.src = this.tileUrlValue
+    }
 
     this.frameWidth = 36
     this.frameHeight = 40
@@ -120,6 +151,40 @@ export default class extends Controller {
 
     if (this.background.complete) {
       this.drawBottomAlignedCover(this.background)
+    }
+
+    if (this.tileWidth && this.tileHeight) {
+      if (this.grid) {
+        const rows = this.grid.length
+        const cols = rows > 0 ? this.grid[0].length : 0
+
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            if (this.grid[row][col] === 1) {
+              this.ctx.drawImage(
+                this.tile,
+                col * this.tileWidth,
+                row * this.tileHeight,
+                this.tileWidth,
+                this.tileHeight,
+              )
+            }
+          }
+        }
+      } else {
+        const groundCols = this.groundCols || Math.ceil(this.canvas.width / this.tileWidth)
+        const groundY = this.groundY ?? this.canvas.height - this.tileHeight
+
+        for (let col = 0; col < groundCols; col++) {
+          this.ctx.drawImage(
+            this.tile,
+            col * this.tileWidth,
+            groundY,
+            this.tileWidth,
+            this.tileHeight,
+          )
+        }
+      }
     }
 
     const sx = (this.currentFrame % this.columns) * this.frameWidth + this.innerOffsetX
