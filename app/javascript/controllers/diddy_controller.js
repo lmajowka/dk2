@@ -2,12 +2,16 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static values = {
+    backgroundUrl: String,
     spriteUrl: String,
   }
 
   connect() {
     this.canvas = this.element
     this.ctx = this.canvas.getContext("2d")
+
+    this.background = new Image()
+    this.background.src = this.backgroundUrlValue
 
     this.sprite = new Image()
     this.sprite.src = this.spriteUrlValue
@@ -114,6 +118,10 @@ export default class extends Controller {
   draw() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
+    if (this.background.complete) {
+      this.drawBottomAlignedCover(this.background)
+    }
+
     const sx = (this.currentFrame % this.columns) * this.frameWidth + this.innerOffsetX
     const sy = this.rowRight * this.frameHeight
 
@@ -139,5 +147,23 @@ export default class extends Controller {
     )
 
     this.ctx.restore()
+  }
+
+  drawBottomAlignedCover(img) {
+    const cw = this.canvas.width
+    const ch = this.canvas.height
+    const iw = img.naturalWidth || img.width
+    const ih = img.naturalHeight || img.height
+
+    if (!iw || !ih) return
+
+    const scale = Math.max(cw / iw, ch / ih)
+    const sw = cw / scale
+    const sh = ch / scale
+
+    const sx = (iw - sw) / 2
+    const sy = ih - sh
+
+    this.ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch)
   }
 }
