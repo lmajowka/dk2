@@ -14,6 +14,7 @@ export default class extends Controller {
     spriteUrl: String,
     tileUrl: String,
     map: Array,
+    levelCols: Number,
   }
 
   connect() {
@@ -34,9 +35,10 @@ export default class extends Controller {
       this.tileHeight = this.tile.naturalHeight || this.tile.height
 
       if (!this.grid) {
+        this.buildTestGround()
         this.groundY = this.canvas.height - this.tileHeight
         this.groundCols = Math.ceil(this.canvas.width / this.tileWidth)
-        this.y = this.groundY - this.frameHeight
+        this.respawn()
       }
     }
     this.tile.onerror = () => {
@@ -55,13 +57,23 @@ export default class extends Controller {
     this.bodyOffset = -8
     this.innerOffsetX = 8
 
-    this.x = this.canvas.width / 2
-    this.y = this.canvas.height - this.frameHeight - 10
+    this.worldX = this.canvas.width / 2
+    this.cameraX = 0
+    this.x = this.worldX
+    this.worldY = this.canvas.height - this.frameHeight - 10
+    this.y = this.worldY
+    this.vy = 0
+    this.onGround = false
+    this.gravity = 1800
+    this.jumpVelocity = 700
+    this.deathY = this.canvas.height + 200
+    this.maxLives = 3
+    this.lives = this.maxLives
     this.currentFrame = 0
     this.direction = "right"
     this.walking = false
 
-    this.speed = 3
+    this.speed = 180
     this.frameDuration = 80
     this.lastFrameTime = 0
 
@@ -95,6 +107,11 @@ export default class extends Controller {
       this.keys.right = true
       this.direction = "right"
       this.walking = true
+    } else if (e.code === "Space") {
+      if (this.onGround) {
+        this.vy = -this.jumpVelocity
+        this.onGround = false
+      }
     }
   }
 
@@ -125,16 +142,36 @@ export default class extends Controller {
   }
 
   update(delta) {
+    const dt = delta / 1000
+
     if (this.keys.left) {
-      this.x -= this.speed
+      this.worldX -= this.speed * dt
     }
     if (this.keys.right) {
-      this.x += this.speed
+      this.worldX += this.speed * dt
     }
 
-    if (this.x < 0) this.x = 0
-    if (this.x > this.canvas.width - this.frameWidth) {
-      this.x = this.canvas.width - this.frameWidth
+    const levelWidthPx = this.getLevelWidthPx()
+    if (levelWidthPx != null) {
+      const maxWorldX = Math.max(0, levelWidthPx - this.frameWidth)
+      if (this.worldX < 0) this.worldX = 0
+      if (this.worldX > maxWorldX) this.worldX = maxWorldX
+    } else {
+      if (this.worldX < 0) this.worldX = 0
+    }
+
+    this.updateCamera()
+
+    this.vy += this.gravity * dt
+    this.worldY += this.vy * dt
+
+    this.resolveGroundCollision()
+
+    this.y = this.worldY
+
+    if (this.worldY > this.deathY) {
+      this.loseLifeAndRestart()
+      return
     }
 
     if (this.walking) {
@@ -143,6 +180,118 @@ export default class extends Controller {
         this.lastFrameTime = 0
         this.currentFrame = (this.currentFrame + 1) % this.walkFrames
       }
+    }
+  }
+
+  getLevelWidthPx() {
+    if (!this.tileWidth) return null
+
+    if (this.grid) {
+      const rows = this.grid.length
+      const cols = rows > 0 ? this.grid[0].length : 0
+      return cols * this.tileWidth
+    }
+
+    if (this.ground) {
+      return this.ground.length * this.tileWidth
+    }
+
+    const levelCols = this.hasLevelColsValue ? this.levelColsValue : 80
+    return levelCols * this.tileWidth
+  }
+
+  buildTestGround() {
+    const levelCols = this.hasLevelColsValue ? this.levelColsValue : 80
+    this.ground = new Array(levelCols).fill(1)
+
+    const holeStart = Math.min(levelCols - 1, 30)
+    const holeWidth = 6
+    for (let i = 0; i < holeWidth; i++) {
+      const col = holeStart + i
+      if (col >= 0 && col < this.ground.length) {
+        this.ground[col] = 0
+      }
+    }
+  }
+
+  hasGroundAt(col) {
+    if (!this.ground) return true
+    if (col < 0 || col >= this.ground.length) return false
+    return this.ground[col] === 1
+  }
+
+  resolveGroundCollision() {
+    if (!this.tileWidth || !this.tileHeight) return
+    if (this.groundY == null) return
+
+    const feetY = this.worldY + this.frameHeight
+    if (feetY < this.groundY) {
+      this.onGround = false
+      return
+    }
+
+    const footInset = 6
+    const footLeftX = this.worldX + footInset
+    const footRightX = this.worldX + this.frameWidth - footInset
+
+    const leftCol = Math.floor(footLeftX / this.tileWidth)
+    const rightCol = Math.floor(footRightX / this.tileWidth)
+
+    const supported = this.hasGroundAt(leftCol) || this.hasGroundAt(rightCol)
+    if (!supported) {
+      this.onGround = false
+      return
+    }
+
+    this.worldY = this.groundY - this.frameHeight
+    this.vy = 0
+    this.onGround = true
+  }
+
+  loseLifeAndRestart() {
+    this.lives -= 1
+    if (this.lives <= 0) {
+      this.lives = this.maxLives
+    }
+    this.respawn()
+  }
+
+  respawn() {
+    this.cameraX = 0
+    this.worldX = 50
+    if (this.groundY != null) {
+      this.worldY = this.groundY - this.frameHeight
+    } else {
+      this.worldY = this.canvas.height - this.frameHeight - 10
+    }
+    this.vy = 0
+    this.onGround = true
+    this.updateCamera()
+    this.y = this.worldY
+  }
+
+  updateCamera() {
+    const levelWidthPx = this.getLevelWidthPx()
+    if (levelWidthPx == null) {
+      this.x = this.worldX
+      return
+    }
+
+    const maxCameraX = Math.max(0, levelWidthPx - this.canvas.width)
+    const centerX = this.canvas.width / 2
+
+    const desiredCameraX = this.worldX - centerX
+    if (desiredCameraX > this.cameraX) {
+      this.cameraX = Math.min(desiredCameraX, maxCameraX)
+    } else if (desiredCameraX < this.cameraX) {
+      this.cameraX = Math.max(desiredCameraX, 0)
+    }
+
+    this.x = this.worldX - this.cameraX
+
+    if (this.x < 0) this.x = 0
+    if (this.x > this.canvas.width - this.frameWidth) {
+      this.x = this.canvas.width - this.frameWidth
     }
   }
 
@@ -158,12 +307,15 @@ export default class extends Controller {
         const rows = this.grid.length
         const cols = rows > 0 ? this.grid[0].length : 0
 
+        const startCol = Math.max(0, Math.floor(this.cameraX / this.tileWidth))
+        const endCol = Math.min(cols, startCol + Math.ceil(this.canvas.width / this.tileWidth) + 2)
+
         for (let row = 0; row < rows; row++) {
-          for (let col = 0; col < cols; col++) {
+          for (let col = startCol; col < endCol; col++) {
             if (this.grid[row][col] === 1) {
               this.ctx.drawImage(
                 this.tile,
-                col * this.tileWidth,
+                col * this.tileWidth - this.cameraX,
                 row * this.tileHeight,
                 this.tileWidth,
                 this.tileHeight,
@@ -172,17 +324,23 @@ export default class extends Controller {
           }
         }
       } else {
-        const groundCols = this.groundCols || Math.ceil(this.canvas.width / this.tileWidth)
         const groundY = this.groundY ?? this.canvas.height - this.tileHeight
 
-        for (let col = 0; col < groundCols; col++) {
-          this.ctx.drawImage(
-            this.tile,
-            col * this.tileWidth,
-            groundY,
-            this.tileWidth,
-            this.tileHeight,
-          )
+        const levelWidthPx = this.getLevelWidthPx()
+        const worldCols = levelWidthPx != null ? Math.ceil(levelWidthPx / this.tileWidth) : 0
+        const startCol = Math.max(0, Math.floor(this.cameraX / this.tileWidth))
+        const endCol = Math.min(worldCols, startCol + Math.ceil(this.canvas.width / this.tileWidth) + 2)
+
+        for (let col = startCol; col < endCol; col++) {
+          if (this.hasGroundAt(col)) {
+            this.ctx.drawImage(
+              this.tile,
+              col * this.tileWidth - this.cameraX,
+              groundY,
+              this.tileWidth,
+              this.tileHeight,
+            )
+          }
         }
       }
     }
