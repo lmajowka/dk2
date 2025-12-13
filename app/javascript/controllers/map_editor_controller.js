@@ -10,7 +10,7 @@ export default class extends Controller {
   }
 
   connect() {
-    const defaultRows = this.hasRowsValue ? this.rowsValue : 7
+    const defaultRows = this.hasRowsValue ? this.rowsValue : 15
     const defaultCols = this.hasColsValue ? this.colsValue : 24
     this.rows = defaultRows
     this.cols = defaultCols

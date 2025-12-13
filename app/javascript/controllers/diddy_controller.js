@@ -59,16 +59,9 @@ export default class extends Controller {
         this.tileHeight = 64
       }
 
-      if (this.grid && this.tileHeight) {
-        const maxVisibleRows = Math.floor(this.canvas.height / this.tileHeight)
-        if (maxVisibleRows > 0 && this.grid.length > maxVisibleRows) {
-          this.grid = this.grid.slice(0, maxVisibleRows)
-        }
-      }
-
       if (this.grid) {
-        const mapHeightPx = this.grid.length * this.tileHeight
-        this.mapOffsetY = Math.max(0, this.canvas.height - mapHeightPx)
+        this.mapHeightPx = this.grid.length * this.tileHeight
+        this.deathY = this.mapHeightPx + 200
       }
 
       this.respawn()
@@ -77,6 +70,10 @@ export default class extends Controller {
     if (urls.length === 0) {
       this.tileWidth = 64
       this.tileHeight = 64
+      if (this.grid) {
+        this.mapHeightPx = this.grid.length * this.tileHeight
+        this.deathY = this.mapHeightPx + 200
+      }
       this.respawn()
     } else {
       urls.forEach((url, index) => {
@@ -111,7 +108,7 @@ export default class extends Controller {
     this.gravity = 1800
     this.jumpVelocity = 700
     this.deathY = this.canvas.height + 200
-    this.mapOffsetY = 0
+    this.cameraY = 0
     this.maxLives = 3
     this.lives = this.maxLives
     this.currentFrame = 0
@@ -221,8 +218,6 @@ export default class extends Controller {
 
     this.checkGoalReached()
 
-    this.y = this.worldY
-
     if (this.worldY > this.deathY) {
       this.loseLifeAndRestart()
       return
@@ -278,7 +273,7 @@ export default class extends Controller {
 
     for (let row = this.grid.length - 1; row >= 0; row--) {
       if (this.isSolid(row, colLeft) || this.isSolid(row, colRight)) {
-        return this.mapOffsetY + row * this.tileHeight - this.frameHeight
+        return row * this.tileHeight - this.frameHeight
       }
     }
 
@@ -302,7 +297,7 @@ export default class extends Controller {
 
     const leftCol = Math.floor(footLeftX / this.tileWidth)
     const rightCol = Math.floor(footRightX / this.tileWidth)
-    const rowUnder = Math.floor((feetY - this.mapOffsetY) / this.tileHeight)
+    const rowUnder = Math.floor(feetY / this.tileHeight)
 
     const supported = this.isSolid(rowUnder, leftCol) || this.isSolid(rowUnder, rightCol)
     if (!supported) {
@@ -310,7 +305,7 @@ export default class extends Controller {
       return
     }
 
-    this.worldY = this.mapOffsetY + rowUnder * this.tileHeight - this.frameHeight
+    this.worldY = rowUnder * this.tileHeight - this.frameHeight
     this.vy = 0
     this.onGround = true
   }
@@ -334,7 +329,7 @@ export default class extends Controller {
 
     const leftCol = Math.floor(footLeftX / this.tileWidth)
     const rightCol = Math.floor(footRightX / this.tileWidth)
-    const rowUnder = Math.floor((feetY - this.mapOffsetY) / this.tileHeight)
+    const rowUnder = Math.floor(feetY / this.tileHeight)
 
     if (this.isGoal(rowUnder, leftCol) || this.isGoal(rowUnder, rightCol)) {
       this.levelEnded = true
@@ -344,6 +339,7 @@ export default class extends Controller {
 
   respawn() {
     this.cameraX = 0
+    this.cameraY = 0
     this.worldX = 50
     this.levelEnded = false
     this.levelEndedTime = 0
@@ -359,32 +355,46 @@ export default class extends Controller {
 
     this.vy = 0
     this.updateCamera()
-    this.y = this.worldY
+    this.y = this.worldY - this.cameraY
   }
 
   updateCamera() {
     const levelWidthPx = this.getLevelWidthPx()
-    if (levelWidthPx == null) {
+    const levelHeightPx = this.mapHeightPx || (this.grid ? this.grid.length * this.tileHeight : this.canvas.height)
+
+    // Horizontal camera
+    if (levelWidthPx != null) {
+      const maxCameraX = Math.max(0, levelWidthPx - this.canvas.width)
+      const centerX = this.canvas.width / 2
+
+      const desiredCameraX = this.worldX - centerX
+      if (desiredCameraX > this.cameraX) {
+        this.cameraX = Math.min(desiredCameraX, maxCameraX)
+      } else if (desiredCameraX < this.cameraX) {
+        this.cameraX = Math.max(desiredCameraX, 0)
+      }
+
+      this.x = this.worldX - this.cameraX
+      if (this.x < 0) this.x = 0
+      if (this.x > this.canvas.width - this.frameWidth) {
+        this.x = this.canvas.width - this.frameWidth
+      }
+    } else {
       this.x = this.worldX
-      return
     }
 
-    const maxCameraX = Math.max(0, levelWidthPx - this.canvas.width)
-    const centerX = this.canvas.width / 2
+    // Vertical camera
+    const maxCameraY = Math.max(0, levelHeightPx - this.canvas.height)
+    const centerY = this.canvas.height / 2
 
-    const desiredCameraX = this.worldX - centerX
-    if (desiredCameraX > this.cameraX) {
-      this.cameraX = Math.min(desiredCameraX, maxCameraX)
-    } else if (desiredCameraX < this.cameraX) {
-      this.cameraX = Math.max(desiredCameraX, 0)
+    const desiredCameraY = this.worldY - centerY
+    if (desiredCameraY > this.cameraY) {
+      this.cameraY = Math.min(desiredCameraY, maxCameraY)
+    } else if (desiredCameraY < this.cameraY) {
+      this.cameraY = Math.max(desiredCameraY, 0)
     }
 
-    this.x = this.worldX - this.cameraX
-
-    if (this.x < 0) this.x = 0
-    if (this.x > this.canvas.width - this.frameWidth) {
-      this.x = this.canvas.width - this.frameWidth
-    }
+    this.y = this.worldY - this.cameraY
   }
 
   draw() {
@@ -401,15 +411,17 @@ export default class extends Controller {
 
         const startCol = Math.max(0, Math.floor(this.cameraX / this.tileWidth))
         const endCol = Math.min(cols, startCol + Math.ceil(this.canvas.width / this.tileWidth) + 2)
+        const startRow = Math.max(0, Math.floor(this.cameraY / this.tileHeight))
+        const endRow = Math.min(rows, startRow + Math.ceil(this.canvas.height / this.tileHeight) + 2)
 
-        for (let row = 0; row < rows; row++) {
+        for (let row = startRow; row < endRow; row++) {
           for (let col = startCol; col < endCol; col++) {
             const cell = this.grid[row][col]
             if (cell > 0 && this.tileImages[cell]) {
               this.ctx.drawImage(
                 this.tileImages[cell],
                 col * this.tileWidth - this.cameraX,
-                this.mapOffsetY + row * this.tileHeight,
+                row * this.tileHeight - this.cameraY,
                 this.tileWidth,
                 this.tileHeight,
               )
