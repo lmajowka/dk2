@@ -141,8 +141,8 @@ export default class extends Controller {
   }
 
   tileColor(value) {
-    if (value === 1) return "#e11d48"
-    if (value === 2) return "#ff0000"
+    if (value === 1) return "#8B4513"
+    if (value === 2) return "#228B22"
     return "#111"
   }
 }

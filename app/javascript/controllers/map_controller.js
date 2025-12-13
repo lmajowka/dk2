@@ -11,7 +11,8 @@ const DEFAULT_MAP = [
 
 export default class extends Controller {
   static values = {
-    tileUrl: String,
+    tile1Url: String,
+    tile2Url: String,
     map: Array,
   }
 
@@ -21,17 +22,29 @@ export default class extends Controller {
 
     this.grid = this.hasMapValue ? this.mapValue : DEFAULT_MAP
 
-    this.tile = new Image()
-    this.tile.onload = () => {
-      this.tileWidth = this.tile.naturalWidth || this.tile.width
-      this.tileHeight = this.tile.naturalHeight || this.tile.height
+    this.tile1 = new Image()
+    this.tile2 = new Image()
+    this.tilesLoaded = 0
+
+    const onTileLoad = () => {
+      this.tilesLoaded++
+      if (this.tilesLoaded < 2) return
+
+      this.tileWidth = this.tile1.naturalWidth || this.tile1.width
+      this.tileHeight = this.tile1.naturalHeight || this.tile1.height
 
       this.resizeCanvasToMap()
       this.draw()
     }
 
-    if (this.hasTileUrlValue) {
-      this.tile.src = this.tileUrlValue
+    this.tile1.onload = onTileLoad
+    this.tile2.onload = onTileLoad
+
+    if (this.hasTile1UrlValue) {
+      this.tile1.src = this.tile1UrlValue
+    }
+    if (this.hasTile2UrlValue) {
+      this.tile2.src = this.tile2UrlValue
     }
   }
 
@@ -56,15 +69,15 @@ export default class extends Controller {
         const cell = this.grid[row][col]
         if (cell === 1) {
           this.ctx.drawImage(
-            this.tile,
+            this.tile1,
             col * this.tileWidth,
             row * this.tileHeight,
             this.tileWidth,
             this.tileHeight,
           )
         } else if (cell === 2) {
-          this.ctx.fillStyle = "#ff0000"
-          this.ctx.fillRect(
+          this.ctx.drawImage(
+            this.tile2,
             col * this.tileWidth,
             row * this.tileHeight,
             this.tileWidth,

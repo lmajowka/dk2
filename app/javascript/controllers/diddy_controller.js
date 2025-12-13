@@ -14,7 +14,8 @@ export default class extends Controller {
   static values = {
     backgroundUrl: String,
     spriteUrl: String,
-    tileUrl: String,
+    tile1Url: String,
+    tile2Url: String,
     map: Array,
     levelCols: Number,
   }
@@ -42,10 +43,16 @@ export default class extends Controller {
     this.sprite = new Image()
     this.sprite.src = this.spriteUrlValue
 
-    this.tile = new Image()
-    this.tile.onload = () => {
-      this.tileWidth = this.tile.naturalWidth || this.tile.width
-      this.tileHeight = this.tile.naturalHeight || this.tile.height
+    this.tile1 = new Image()
+    this.tile2 = new Image()
+    this.tilesLoaded = 0
+
+    const onTileLoad = () => {
+      this.tilesLoaded++
+      if (this.tilesLoaded < 2) return
+
+      this.tileWidth = this.tile1.naturalWidth || this.tile1.width
+      this.tileHeight = this.tile1.naturalHeight || this.tile1.height
 
       if (this.grid && this.tileHeight) {
         const maxVisibleRows = Math.floor(this.canvas.height / this.tileHeight)
@@ -61,12 +68,17 @@ export default class extends Controller {
 
       this.respawn()
     }
-    this.tile.onerror = () => {
-      console.error("Failed to load tile image", this.tileUrlValue)
-    }
 
-    if (this.hasTileUrlValue) {
-      this.tile.src = this.tileUrlValue
+    this.tile1.onload = onTileLoad
+    this.tile2.onload = onTileLoad
+    this.tile1.onerror = () => console.error("Failed to load tile1 image", this.tile1UrlValue)
+    this.tile2.onerror = () => console.error("Failed to load tile2 image", this.tile2UrlValue)
+
+    if (this.hasTile1UrlValue) {
+      this.tile1.src = this.tile1UrlValue
+    }
+    if (this.hasTile2UrlValue) {
+      this.tile2.src = this.tile2UrlValue
     }
 
     this.frameWidth = 36
@@ -381,15 +393,15 @@ export default class extends Controller {
             const cell = this.grid[row][col]
             if (cell === 1) {
               this.ctx.drawImage(
-                this.tile,
+                this.tile1,
                 col * this.tileWidth - this.cameraX,
                 this.mapOffsetY + row * this.tileHeight,
                 this.tileWidth,
                 this.tileHeight,
               )
             } else if (cell === 2) {
-              this.ctx.fillStyle = "#ff0000"
-              this.ctx.fillRect(
+              this.ctx.drawImage(
+                this.tile2,
                 col * this.tileWidth - this.cameraX,
                 this.mapOffsetY + row * this.tileHeight,
                 this.tileWidth,
