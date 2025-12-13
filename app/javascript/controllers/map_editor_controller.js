@@ -1,11 +1,13 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["grid", "input", "colsInput"]
+  static targets = ["grid", "input", "colsInput", "palette"]
   static values = {
     rows: Number,
     cols: Number,
     initialMap: Array,
+    tile1Url: String,
+    tile2Url: String,
   }
 
   connect() {
@@ -26,8 +28,55 @@ export default class extends Controller {
       }
     }
 
+    this.selectedTile = 1
+    this.tile1Loaded = false
+    this.tile2Loaded = false
+
+    if (this.hasTile1UrlValue) {
+      this.tile1Url = this.tile1UrlValue
+      const img = new Image()
+      img.onload = () => {
+        this.tile1Loaded = true
+        this.render()
+      }
+      img.src = this.tile1Url
+    }
+
+    if (this.hasTile2UrlValue) {
+      this.tile2Url = this.tile2UrlValue
+      const img = new Image()
+      img.onload = () => {
+        this.tile2Loaded = true
+        this.render()
+      }
+      img.src = this.tile2Url
+    }
+
     this.render()
+    this.renderPalette()
     this.syncInput()
+  }
+
+  selectTile(event) {
+    const tile = Number(event.params.tile)
+    if (tile >= 0 && tile <= 2) {
+      this.selectedTile = tile
+      this.renderPalette()
+    }
+  }
+
+  renderPalette() {
+    if (!this.hasPaletteTarget) return
+
+    const items = this.paletteTarget.querySelectorAll("[data-tile]")
+    items.forEach((item) => {
+      const tile = Number(item.dataset.tile)
+      if (tile === this.selectedTile) {
+        item.classList.add("selected")
+      } else {
+        item.classList.remove("selected")
+      }
+    })
   }
 
   setCols(event) {
@@ -87,7 +136,7 @@ export default class extends Controller {
     return Array.from({ length: rows }, () => new Array(cols).fill(0))
   }
 
-  toggle(event) {
+  paint(event) {
     const row = Number(event.params.row)
     const col = Number(event.params.col)
 
@@ -96,12 +145,23 @@ export default class extends Controller {
     if (row >= this.map.length) return
     if (col >= this.map[0].length) return
 
-    const current = this.map[row][col]
-    this.map[row][col] = current === 0 ? 1 : current === 1 ? 2 : 0
-    if (event.currentTarget) {
-      event.currentTarget.style.background = this.tileColor(this.map[row][col])
-    }
+    this.map[row][col] = this.selectedTile
+    this.updateCell(event.currentTarget, this.selectedTile)
     this.syncInput()
+  }
+
+  updateCell(cell, value) {
+    cell.className = "map-editor-cell"
+    if (value === 0) {
+      cell.style.backgroundImage = "none"
+      cell.classList.add("empty")
+    } else if (value === 1 && this.tile1Url) {
+      cell.style.backgroundImage = `url(${this.tile1Url})`
+      cell.classList.remove("empty")
+    } else if (value === 2 && this.tile2Url) {
+      cell.style.backgroundImage = `url(${this.tile2Url})`
+      cell.classList.remove("empty")
+    }
   }
 
   render() {
@@ -109,10 +169,15 @@ export default class extends Controller {
 
     const rows = this.map.length
     const cols = rows > 0 ? this.map[0].length : 0
+    const cellSize = 32
 
     this.gridTarget.style.display = "grid"
-    this.gridTarget.style.gridTemplateColumns = `repeat(${cols}, 20px)`
-    this.gridTarget.style.gap = "2px"
+    this.gridTarget.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`
+    this.gridTarget.style.gap = "1px"
+    this.gridTarget.style.background = "#1a1a2e"
+    this.gridTarget.style.padding = "4px"
+    this.gridTarget.style.borderRadius = "8px"
+    this.gridTarget.style.width = "fit-content"
 
     this.gridTarget.innerHTML = ""
 
@@ -120,15 +185,32 @@ export default class extends Controller {
       for (let c = 0; c < cols; c++) {
         const cell = document.createElement("button")
         cell.type = "button"
-        cell.dataset.action = "click->map-editor#toggle"
+        cell.className = "map-editor-cell"
+        cell.dataset.action = "click->map-editor#paint"
         cell.dataset.mapEditorRowParam = String(r)
         cell.dataset.mapEditorColParam = String(c)
 
-        cell.style.width = "20px"
-        cell.style.height = "20px"
+        cell.style.width = `${cellSize}px`
+        cell.style.height = `${cellSize}px`
         cell.style.padding = "0"
-        cell.style.border = "1px solid #444"
-        cell.style.background = this.tileColor(this.map[r][c])
+        cell.style.border = "none"
+        cell.style.cursor = "pointer"
+        cell.style.backgroundSize = "cover"
+        cell.style.backgroundPosition = "center"
+        cell.style.borderRadius = "2px"
+        cell.style.transition = "transform 0.1s, box-shadow 0.1s"
+
+        const value = this.map[r][c]
+        if (value === 0) {
+          cell.style.background = "#16213e"
+          cell.classList.add("empty")
+        } else if (value === 1 && this.tile1Url) {
+          cell.style.backgroundImage = `url(${this.tile1Url})`
+        } else if (value === 2 && this.tile2Url) {
+          cell.style.backgroundImage = `url(${this.tile2Url})`
+        } else {
+          cell.style.background = this.tileColor(value)
+        }
 
         this.gridTarget.appendChild(cell)
       }

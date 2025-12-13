@@ -1,6 +1,229 @@
+<style>
+  .map-editor-container {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .map-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .map-editor-title {
+    color: #e94560;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 10px rgba(233, 69, 96, 0.3);
+  }
+
+  .map-editor-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .map-editor-controls label {
+    color: #a0a0b0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .map-editor-controls input[type="number"] {
+    width: 80px;
+    padding: 8px 12px;
+    border: 2px solid #2a2a4a;
+    border-radius: 8px;
+    background: #0f0f23;
+    color: #fff;
+    font-size: 1rem;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+
+  .map-editor-controls input[type="number"]:focus {
+    outline: none;
+    border-color: #e94560;
+  }
+
+  .map-editor-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .map-editor-btn-secondary {
+    background: #2a2a4a;
+    color: #fff;
+  }
+
+  .map-editor-btn-secondary:hover {
+    background: #3a3a5a;
+    transform: translateY(-1px);
+  }
+
+  .palette-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+  }
+
+  .palette-label {
+    color: #a0a0b0;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .palette-items {
+    display: flex;
+    gap: 8px;
+  }
+
+  .palette-item {
+    width: 48px;
+    height: 48px;
+    border: 3px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .palette-item:hover {
+    transform: scale(1.1);
+  }
+
+  .palette-item.selected {
+    border-color: #e94560;
+    box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+  }
+
+  .palette-item.empty-tile {
+    background: #16213e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .palette-item.empty-tile::after {
+    content: "✕";
+    color: #4a4a6a;
+    font-size: 1.2rem;
+  }
+
+  .palette-item-label {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: #707080;
+    white-space: nowrap;
+  }
+
+  .grid-container {
+    overflow-x: auto;
+    max-width: 100%;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+  }
+
+  .map-editor-cell:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(233, 69, 96, 0.4);
+    z-index: 10;
+    position: relative;
+  }
+
+  .map-editor-cell.empty {
+    background: #16213e !important;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    color: #a0a0b0;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .form-group input[type="text"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 16px;
+    border: 2px solid #2a2a4a;
+    border-radius: 10px;
+    background: #0f0f23;
+    color: #fff;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #e94560;
+  }
+
+  .submit-btn {
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #e94560 0%, #c73e54 100%);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+  }
+
+  .error-list {
+    background: rgba(233, 69, 96, 0.1);
+    border: 1px solid #e94560;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .error-list ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #e94560;
+  }
+</style>
+
 <%= form_with model: level do |f| %>
   <% if level.errors.any? %>
-    <div>
+    <div class="error-list">
       <ul>
         <% level.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
@@ -9,35 +232,79 @@
     </div>
   <% end %>
 
-  <div>
-    <%= f.label :name %>
-    <%= f.text_field :name %>
+  <div class="form-group">
+    <%= f.label :name, "Nome do Level" %>
+    <%= f.text_field :name, placeholder: "Digite o nome do level..." %>
   </div>
 
   <div
+    class="map-editor-container"
     data-controller="map-editor"
-    data-map-editor-initial-map-value='<%= level.map.to_json %>'>
-    <div>
-      <label>
-        Colunas
-        <input
-          type="number"
-          min="1"
-          step="1"
-          value="<%= (level.map[0]&.length || 24) %>"
-          data-map-editor-target="colsInput"
-          data-action="change->map-editor#setCols">
-      </label>
-      <button type="button" data-action="click->map-editor#addCols" data-map-editor-delta-param="50">+50</button>
-      <button type="button" data-action="click->map-editor#addCols" data-map-editor-delta-param="-50">-50</button>
+    data-map-editor-initial-map-value='<%= level.map.to_json %>'
+    data-map-editor-tile1-url-value="<%= asset_path("tiles/tile1.png") %>"
+    data-map-editor-tile2-url-value="<%= asset_path("tiles/tile2.png") %>">
+
+    <div class="map-editor-header">
+      <h3 class="map-editor-title">🗺️ Map Editor</h3>
+      <div class="map-editor-controls">
+        <label>
+          Colunas
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value="<%= (level.map[0]&.length || 24) %>"
+            data-map-editor-target="colsInput"
+            data-action="change->map-editor#setCols">
+        </label>
+        <button type="button" class="map-editor-btn map-editor-btn-secondary" data-action="click->map-editor#addCols" data-map-editor-delta-param="10">+10</button>
+        <button type="button" class="map-editor-btn map-editor-btn-secondary" data-action="click->map-editor#addCols" data-map-editor-delta-param="-10">-10</button>
+      </div>
     </div>
+
+    <div class="palette-container" data-map-editor-target="palette">
+      <span class="palette-label">Pincel:</span>
+      <div class="palette-items">
+        <button
+          type="button"
+          class="palette-item empty-tile"
+          data-tile="0"
+          data-action="click->map-editor#selectTile"
+          data-map-editor-tile-param="0"
+          title="Apagar">
+          <span class="palette-item-label">Vazio</span>
+        </button>
+        <button
+          type="button"
+          class="palette-item selected"
+          data-tile="1"
+          data-action="click->map-editor#selectTile"
+          data-map-editor-tile-param="1"
+          style="background-image: url('<%= asset_path("tiles/tile1.png") %>')"
+          title="Tile 1">
+          <span class="palette-item-label">Tile 1</span>
+        </button>
+        <button
+          type="button"
+          class="palette-item"
+          data-tile="2"
+          data-action="click->map-editor#selectTile"
+          data-map-editor-tile-param="2"
+          style="background-image: url('<%= asset_path("tiles/tile2.png") %>')"
+          title="Tile 2">
+          <span class="palette-item-label">Tile 2</span>
+        </button>
+      </div>
+    </div>
+
     <%= f.hidden_field :map, value: level.map.to_json, data: { map_editor_target: "input" } %>
-    <div style="overflow-x: auto; max-width: 100%;">
+
+    <div class="grid-container">
       <div data-map-editor-target="grid"></div>
     </div>
   </div>
 
-  <div>
-    <%= f.submit %>
+  <div style="margin-top: 24px;">
+    <%= f.submit "Salvar Level", class: "submit-btn" %>
   </div>
 <% end %>
