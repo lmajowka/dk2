@@ -12,6 +12,7 @@ const DEFAULT_MAP = [
 export default class extends Controller {
   static values = {
     tileUrls: Array,
+    goalTileId: Number,
     map: Array,
   }
 
@@ -106,7 +107,9 @@ export default class extends Controller {
   }
 
   isGoal(row, col) {
-    return this.tileAt(row, col) === 2
+    const goalId = this.hasGoalTileIdValue ? this.goalTileIdValue : null
+    if (goalId === null) return false
+    return this.tileAt(row, col) === goalId
   }
 
   isGoalAtWorld(x, y) {

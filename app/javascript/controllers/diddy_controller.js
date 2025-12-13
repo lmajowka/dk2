@@ -15,6 +15,7 @@ export default class extends Controller {
     backgroundUrl: String,
     spriteUrl: String,
     tileUrls: Array,
+    goalTileId: Number,
     map: Array,
     levelCols: Number,
   }
@@ -262,7 +263,9 @@ export default class extends Controller {
   }
 
   isGoal(row, col) {
-    return this.tileAt(row, col) === 2
+    const goalId = this.hasGoalTileIdValue ? this.goalTileIdValue : null
+    if (goalId === null) return false
+    return this.tileAt(row, col) === goalId
   }
 
   findSpawnY(worldX) {
