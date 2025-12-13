@@ -1,11 +1,13 @@
-<h1><%= @level.name %></h1>
+<div class="container">
+  <div class="page-header">
+    <h1><%= @level.name %></h1>
+    <div class="level-actions">
+      <%= link_to "← Back", levels_path, class: "btn btn-secondary" %>
+      <%= link_to "Edit", edit_level_path(@level), class: "btn btn-primary" %>
+    </div>
+  </div>
 
-<p>
-  <%= link_to "Edit", edit_level_path(@level) %>
-  <%= link_to "Back", levels_path %>
-</p>
-
-<canvas
+  <canvas
   width="800"
   height="450"
   style="display: block; border: 2px solid red"
@@ -15,3 +17,4 @@
   data-diddy-tile1-url-value="<%= asset_path("tiles/tile1.png") %>"
   data-diddy-tile2-url-value="<%= asset_path("tiles/tile2.png") %>"
   data-diddy-map-value='<%= @level.map.to_json %>'></canvas>
+</div>
