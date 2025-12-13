@@ -241,8 +241,7 @@
     class="map-editor-container"
     data-controller="map-editor"
     data-map-editor-initial-map-value='<%= level.map.to_json %>'
-    data-map-editor-tile1-url-value="<%= asset_path("tiles/tile1.png") %>"
-    data-map-editor-tile2-url-value="<%= asset_path("tiles/tile2.png") %>">
+    data-map-editor-tile-urls-value="<%= tile_urls_json %>">
 
     <div class="map-editor-header">
       <h3 class="map-editor-title">🗺️ Map Editor</h3>
@@ -274,26 +273,18 @@
           title="Apagar">
           <span class="palette-item-label">Vazio</span>
         </button>
-        <button
-          type="button"
-          class="palette-item selected"
-          data-tile="1"
-          data-action="click->map-editor#selectTile"
-          data-map-editor-tile-param="1"
-          style="background-image: url('<%= asset_path("tiles/tile1.png") %>')"
-          title="Tile 1">
-          <span class="palette-item-label">Tile 1</span>
-        </button>
-        <button
-          type="button"
-          class="palette-item"
-          data-tile="2"
-          data-action="click->map-editor#selectTile"
-          data-map-editor-tile-param="2"
-          style="background-image: url('<%= asset_path("tiles/tile2.png") %>')"
-          title="Tile 2">
-          <span class="palette-item-label">Tile 2</span>
-        </button>
+        <% tile_assets.each_with_index do |tile, index| %>
+          <button
+            type="button"
+            class="palette-item<%= index == 0 ? ' selected' : '' %>"
+            data-tile="<%= tile[:id] %>"
+            data-action="click->map-editor#selectTile"
+            data-map-editor-tile-param="<%= tile[:id] %>"
+            style="background-image: url('<%= asset_path(tile[:path]) %>')"
+            title="<%= tile[:name] %>">
+            <span class="palette-item-label"><%= tile[:name] %></span>
+          </button>
+        <% end %>
       </div>
     </div>
 

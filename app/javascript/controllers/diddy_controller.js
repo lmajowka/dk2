@@ -14,8 +14,7 @@ export default class extends Controller {
   static values = {
     backgroundUrl: String,
     spriteUrl: String,
-    tile1Url: String,
-    tile2Url: String,
+    tileUrls: Array,
     map: Array,
     levelCols: Number,
   }
@@ -43,16 +42,21 @@ export default class extends Controller {
     this.sprite = new Image()
     this.sprite.src = this.spriteUrlValue
 
-    this.tile1 = new Image()
-    this.tile2 = new Image()
+    this.tileImages = []
     this.tilesLoaded = 0
 
-    const onTileLoad = () => {
-      this.tilesLoaded++
-      if (this.tilesLoaded < 2) return
+    const urls = this.hasTileUrlsValue ? this.tileUrlsValue : []
+    this.tileCount = urls.length
 
-      this.tileWidth = this.tile1.naturalWidth || this.tile1.width
-      this.tileHeight = this.tile1.naturalHeight || this.tile1.height
+    const onAllTilesLoaded = () => {
+      const firstTile = this.tileImages[1]
+      if (firstTile) {
+        this.tileWidth = firstTile.naturalWidth || firstTile.width
+        this.tileHeight = firstTile.naturalHeight || firstTile.height
+      } else {
+        this.tileWidth = 64
+        this.tileHeight = 64
+      }
 
       if (this.grid && this.tileHeight) {
         const maxVisibleRows = Math.floor(this.canvas.height / this.tileHeight)
@@ -69,16 +73,23 @@ export default class extends Controller {
       this.respawn()
     }
 
-    this.tile1.onload = onTileLoad
-    this.tile2.onload = onTileLoad
-    this.tile1.onerror = () => console.error("Failed to load tile1 image", this.tile1UrlValue)
-    this.tile2.onerror = () => console.error("Failed to load tile2 image", this.tile2UrlValue)
-
-    if (this.hasTile1UrlValue) {
-      this.tile1.src = this.tile1UrlValue
-    }
-    if (this.hasTile2UrlValue) {
-      this.tile2.src = this.tile2UrlValue
+    if (urls.length === 0) {
+      this.tileWidth = 64
+      this.tileHeight = 64
+      this.respawn()
+    } else {
+      urls.forEach((url, index) => {
+        const img = new Image()
+        img.onload = () => {
+          this.tilesLoaded++
+          if (this.tilesLoaded === this.tileCount) {
+            onAllTilesLoaded()
+          }
+        }
+        img.onerror = () => console.error(`Failed to load tile${index + 1} image`, url)
+        img.src = url
+        this.tileImages[index + 1] = img
+      })
     }
 
     this.frameWidth = 36
@@ -247,7 +258,7 @@ export default class extends Controller {
 
   isSolid(row, col) {
     const t = this.tileAt(row, col)
-    return t === 1 || t === 2
+    return t > 0
   }
 
   isGoal(row, col) {
@@ -391,17 +402,9 @@ export default class extends Controller {
         for (let row = 0; row < rows; row++) {
           for (let col = startCol; col < endCol; col++) {
             const cell = this.grid[row][col]
-            if (cell === 1) {
+            if (cell > 0 && this.tileImages[cell]) {
               this.ctx.drawImage(
-                this.tile1,
-                col * this.tileWidth - this.cameraX,
-                this.mapOffsetY + row * this.tileHeight,
-                this.tileWidth,
-                this.tileHeight,
-              )
-            } else if (cell === 2) {
-              this.ctx.drawImage(
-                this.tile2,
+                this.tileImages[cell],
                 col * this.tileWidth - this.cameraX,
                 this.mapOffsetY + row * this.tileHeight,
                 this.tileWidth,

@@ -6,8 +6,7 @@ export default class extends Controller {
     rows: Number,
     cols: Number,
     initialMap: Array,
-    tile1Url: String,
-    tile2Url: String,
+    tileUrls: Array,
   }
 
   connect() {
@@ -29,28 +28,23 @@ export default class extends Controller {
     }
 
     this.selectedTile = 1
-    this.tile1Loaded = false
-    this.tile2Loaded = false
+    this.tileImages = []
+    this.tilesLoaded = 0
 
-    if (this.hasTile1UrlValue) {
-      this.tile1Url = this.tile1UrlValue
+    const urls = this.hasTileUrlsValue ? this.tileUrlsValue : []
+    this.tileCount = urls.length
+
+    urls.forEach((url, index) => {
       const img = new Image()
       img.onload = () => {
-        this.tile1Loaded = true
-        this.render()
+        this.tilesLoaded++
+        if (this.tilesLoaded === this.tileCount) {
+          this.render()
+        }
       }
-      img.src = this.tile1Url
-    }
-
-    if (this.hasTile2UrlValue) {
-      this.tile2Url = this.tile2UrlValue
-      const img = new Image()
-      img.onload = () => {
-        this.tile2Loaded = true
-        this.render()
-      }
-      img.src = this.tile2Url
-    }
+      img.src = url
+      this.tileImages[index + 1] = { url, img }
+    })
 
     this.render()
     this.renderPalette()
@@ -59,7 +53,7 @@ export default class extends Controller {
 
   selectTile(event) {
     const tile = Number(event.params.tile)
-    if (tile >= 0 && tile <= 2) {
+    if (tile >= 0 && tile <= this.tileCount) {
       this.selectedTile = tile
       this.renderPalette()
     }
@@ -126,7 +120,7 @@ export default class extends Controller {
       const padded = new Array(maxCols).fill(0)
       for (let i = 0; i < maxCols; i++) {
         const v = r[i]
-        padded[i] = (v === 1 || v === 2) ? v : 0
+        padded[i] = (Number.isInteger(v) && v >= 0) ? v : 0
       }
       return padded
     })
@@ -155,11 +149,8 @@ export default class extends Controller {
     if (value === 0) {
       cell.style.backgroundImage = "none"
       cell.classList.add("empty")
-    } else if (value === 1 && this.tile1Url) {
-      cell.style.backgroundImage = `url(${this.tile1Url})`
-      cell.classList.remove("empty")
-    } else if (value === 2 && this.tile2Url) {
-      cell.style.backgroundImage = `url(${this.tile2Url})`
+    } else if (this.tileImages[value]) {
+      cell.style.backgroundImage = `url(${this.tileImages[value].url})`
       cell.classList.remove("empty")
     }
   }
@@ -204,10 +195,8 @@ export default class extends Controller {
         if (value === 0) {
           cell.style.background = "#16213e"
           cell.classList.add("empty")
-        } else if (value === 1 && this.tile1Url) {
-          cell.style.backgroundImage = `url(${this.tile1Url})`
-        } else if (value === 2 && this.tile2Url) {
-          cell.style.backgroundImage = `url(${this.tile2Url})`
+        } else if (this.tileImages[value]) {
+          cell.style.backgroundImage = `url(${this.tileImages[value].url})`
         } else {
           cell.style.background = this.tileColor(value)
         }
