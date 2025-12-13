@@ -93,6 +93,8 @@ export default class extends Controller {
     this.currentFrame = 0
     this.direction = "right"
     this.walking = false
+    this.levelEnded = false
+    this.levelEndedTime = 0
 
     this.speed = 180
     this.frameDuration = 80
@@ -163,6 +165,11 @@ export default class extends Controller {
   }
 
   update(delta) {
+    if (this.levelEnded) {
+      this.levelEndedTime += delta
+      return
+    }
+
     const dt = delta / 1000
 
     if (this.keys.left) {
@@ -187,6 +194,8 @@ export default class extends Controller {
     this.worldY += this.vy * dt
 
     this.resolveGroundCollision()
+
+    this.checkGoalReached()
 
     this.y = this.worldY
 
@@ -225,7 +234,12 @@ export default class extends Controller {
   }
 
   isSolid(row, col) {
-    return this.tileAt(row, col) === 1
+    const t = this.tileAt(row, col)
+    return t === 1 || t === 2
+  }
+
+  isGoal(row, col) {
+    return this.tileAt(row, col) === 2
   }
 
   findSpawnY(worldX) {
@@ -283,9 +297,30 @@ export default class extends Controller {
     this.respawn()
   }
 
+  checkGoalReached() {
+    if (!this.tileWidth || !this.tileHeight) return
+    if (!this.grid) return
+
+    const footInset = 6
+    const footLeftX = this.worldX + footInset
+    const footRightX = this.worldX + this.frameWidth - footInset
+    const feetY = this.worldY + this.frameHeight
+
+    const leftCol = Math.floor(footLeftX / this.tileWidth)
+    const rightCol = Math.floor(footRightX / this.tileWidth)
+    const rowUnder = Math.floor((feetY - this.mapOffsetY) / this.tileHeight)
+
+    if (this.isGoal(rowUnder, leftCol) || this.isGoal(rowUnder, rightCol)) {
+      this.levelEnded = true
+      this.levelEndedTime = 0
+    }
+  }
+
   respawn() {
     this.cameraX = 0
     this.worldX = 50
+    this.levelEnded = false
+    this.levelEndedTime = 0
 
     const spawnY = this.findSpawnY(this.worldX)
     if (spawnY != null) {
@@ -343,9 +378,18 @@ export default class extends Controller {
 
         for (let row = 0; row < rows; row++) {
           for (let col = startCol; col < endCol; col++) {
-            if (this.grid[row][col] === 1) {
+            const cell = this.grid[row][col]
+            if (cell === 1) {
               this.ctx.drawImage(
                 this.tile,
+                col * this.tileWidth - this.cameraX,
+                this.mapOffsetY + row * this.tileHeight,
+                this.tileWidth,
+                this.tileHeight,
+              )
+            } else if (cell === 2) {
+              this.ctx.fillStyle = "#ff0000"
+              this.ctx.fillRect(
                 col * this.tileWidth - this.cameraX,
                 this.mapOffsetY + row * this.tileHeight,
                 this.tileWidth,
@@ -382,6 +426,41 @@ export default class extends Controller {
     )
 
     this.ctx.restore()
+
+    if (this.levelEnded) {
+      this.drawLevelEndedOverlay()
+    }
+  }
+
+  drawLevelEndedOverlay() {
+    const progress = Math.min(this.levelEndedTime / 500, 1)
+    const alpha = progress * 0.7
+
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+
+    if (progress >= 0.3) {
+      const textProgress = Math.min((this.levelEndedTime - 150) / 300, 1)
+      const scale = 0.5 + textProgress * 0.5
+      const textAlpha = textProgress
+
+      this.ctx.save()
+      this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2)
+      this.ctx.scale(scale, scale)
+
+      this.ctx.font = "bold 48px Arial"
+      this.ctx.textAlign = "center"
+      this.ctx.textBaseline = "middle"
+
+      this.ctx.fillStyle = `rgba(255, 215, 0, ${textAlpha})`
+      this.ctx.fillText("LEVEL ENDED", 0, 0)
+
+      this.ctx.strokeStyle = `rgba(139, 69, 19, ${textAlpha})`
+      this.ctx.lineWidth = 3
+      this.ctx.strokeText("LEVEL ENDED", 0, 0)
+
+      this.ctx.restore()
+    }
   }
 
   drawBottomAlignedCover(img) {

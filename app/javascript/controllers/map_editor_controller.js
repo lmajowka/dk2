@@ -76,7 +76,8 @@ export default class extends Controller {
       const r = Array.isArray(row) ? row : []
       const padded = new Array(maxCols).fill(0)
       for (let i = 0; i < maxCols; i++) {
-        padded[i] = r[i] === 1 ? 1 : 0
+        const v = r[i]
+        padded[i] = (v === 1 || v === 2) ? v : 0
       }
       return padded
     })
@@ -95,9 +96,10 @@ export default class extends Controller {
     if (row >= this.map.length) return
     if (col >= this.map[0].length) return
 
-    this.map[row][col] = this.map[row][col] === 1 ? 0 : 1
+    const current = this.map[row][col]
+    this.map[row][col] = current === 0 ? 1 : current === 1 ? 2 : 0
     if (event.currentTarget) {
-      event.currentTarget.style.background = this.map[row][col] === 1 ? "#e11d48" : "#111"
+      event.currentTarget.style.background = this.tileColor(this.map[row][col])
     }
     this.syncInput()
   }
@@ -126,7 +128,7 @@ export default class extends Controller {
         cell.style.height = "20px"
         cell.style.padding = "0"
         cell.style.border = "1px solid #444"
-        cell.style.background = this.map[r][c] === 1 ? "#e11d48" : "#111"
+        cell.style.background = this.tileColor(this.map[r][c])
 
         this.gridTarget.appendChild(cell)
       }
@@ -136,5 +138,11 @@ export default class extends Controller {
   syncInput() {
     if (!this.hasInputTarget) return
     this.inputTarget.value = JSON.stringify(this.map)
+  }
+
+  tileColor(value) {
+    if (value === 1) return "#e11d48"
+    if (value === 2) return "#ff0000"
+    return "#111"
   }
 }

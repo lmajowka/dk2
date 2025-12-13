@@ -53,9 +53,18 @@ export default class extends Controller {
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        if (this.grid[row][col] === 1) {
+        const cell = this.grid[row][col]
+        if (cell === 1) {
           this.ctx.drawImage(
             this.tile,
+            col * this.tileWidth,
+            row * this.tileHeight,
+            this.tileWidth,
+            this.tileHeight,
+          )
+        } else if (cell === 2) {
+          this.ctx.fillStyle = "#ff0000"
+          this.ctx.fillRect(
             col * this.tileWidth,
             row * this.tileHeight,
             this.tileWidth,
@@ -74,7 +83,17 @@ export default class extends Controller {
   }
 
   isWalkable(row, col) {
-    return this.tileAt(row, col) === 1
+    const t = this.tileAt(row, col)
+    return t === 1 || t === 2
+  }
+
+  isGoal(row, col) {
+    return this.tileAt(row, col) === 2
+  }
+
+  isGoalAtWorld(x, y) {
+    const { row, col } = this.worldToCell(x, y)
+    return this.isGoal(row, col)
   }
 
   worldToCell(x, y) {
