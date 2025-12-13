@@ -1,5 +1,10 @@
-<h1>Edit level</h1>
+<div class="editor-page">
+  <div class="editor-container">
+    <div class="editor-header">
+      <h1>Edit Level</h1>
+      <%= link_to "← Back to Level", level_path(@level), class: "back-link" %>
+    </div>
 
-<%= render "form", level: @level %>
-
-<p><%= link_to "Back", level_path(@level) %></p>
+    <%= render "form", level: @level %>
+  </div>
+</div>
