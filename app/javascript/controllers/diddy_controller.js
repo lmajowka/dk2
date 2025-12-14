@@ -40,8 +40,11 @@ export default class extends Controller {
     this.background = new Image()
     this.background.src = this.backgroundUrlValue
 
-    this.sprite = new Image()
-    this.sprite.src = this.spriteUrlValue
+    this.frameWidth = 64
+    this.frameHeight = 64
+
+    // Criar elemento <img> para o gif animado
+    this.setupSpriteElement()
 
     this.tileImages = []
     this.tilesLoaded = 0
@@ -90,14 +93,6 @@ export default class extends Controller {
       })
     }
 
-    this.frameWidth = 36
-    this.frameHeight = 40
-    this.columns = 12
-    this.walkFrames = 8
-    this.rowRight = 6
-    this.bodyOffset = -8
-    this.innerOffsetX = 8
-
     this.worldX = this.canvas.width / 2
     this.cameraX = 0
     this.x = this.worldX
@@ -118,8 +113,6 @@ export default class extends Controller {
     this.levelEndedTime = 0
 
     this.speed = 180
-    this.frameDuration = 80
-    this.lastFrameTime = 0
 
     this.keys = { left: false, right: false }
 
@@ -133,12 +126,35 @@ export default class extends Controller {
     this.rafId = requestAnimationFrame(this.loop.bind(this))
   }
 
+  setupSpriteElement() {
+    // Garantir que o canvas tenha position relative para o img absolute funcionar
+    const parent = this.canvas.parentNode
+    const computedStyle = window.getComputedStyle(parent)
+    if (computedStyle.position === "static") {
+      parent.style.position = "relative"
+    }
+
+    // Elemento img para o gif animado
+    this.spriteEl = document.createElement("img")
+    this.spriteEl.src = this.spriteUrlValue
+    this.spriteEl.style.position = "absolute"
+    this.spriteEl.style.width = `${this.frameWidth}px`
+    this.spriteEl.style.height = `${this.frameHeight}px`
+    this.spriteEl.style.pointerEvents = "none"
+    this.spriteEl.style.imageRendering = "pixelated"
+    parent.appendChild(this.spriteEl)
+  }
+
   disconnect() {
     window.removeEventListener("keydown", this.onKeyDown)
     window.removeEventListener("keyup", this.onKeyUp)
 
     if (this.rafId) {
       cancelAnimationFrame(this.rafId)
+    }
+
+    if (this.spriteEl && this.spriteEl.parentNode) {
+      this.spriteEl.remove()
     }
   }
 
@@ -178,9 +194,7 @@ export default class extends Controller {
 
     this.update(delta)
 
-    if (this.sprite.complete) {
-      this.draw()
-    }
+    this.draw()
 
     this.rafId = requestAnimationFrame(this.loop.bind(this))
   }
@@ -223,13 +237,6 @@ export default class extends Controller {
       return
     }
 
-    if (this.walking) {
-      this.lastFrameTime += delta
-      if (this.lastFrameTime >= this.frameDuration) {
-        this.lastFrameTime = 0
-        this.currentFrame = (this.currentFrame + 1) % this.walkFrames
-      }
-    }
   }
 
   getLevelWidthPx() {
@@ -431,31 +438,17 @@ export default class extends Controller {
       }
     }
 
-    const sx = (this.currentFrame % this.columns) * this.frameWidth + this.innerOffsetX
-    const sy = this.rowRight * this.frameHeight
-
-    this.ctx.save()
-
-    const dirSign = this.direction === "right" ? 1 : -1
-    this.ctx.translate(this.x + this.frameWidth / 2 + this.bodyOffset * dirSign, this.y)
-
-    if (this.direction === "left") {
-      this.ctx.scale(-1, 1)
+    // Atualizar posição do elemento img do sprite
+    if (this.spriteEl) {
+      const canvasRect = this.canvas.getBoundingClientRect()
+      const parentRect = this.canvas.parentNode.getBoundingClientRect()
+      const offsetX = canvasRect.left - parentRect.left
+      const offsetY = canvasRect.top - parentRect.top
+      
+      this.spriteEl.style.left = `${offsetX + this.x}px`
+      this.spriteEl.style.top = `${offsetY + this.y}px`
+      this.spriteEl.style.transform = this.direction === "left" ? "scaleX(-1)" : "scaleX(1)"
     }
-
-    this.ctx.drawImage(
-      this.sprite,
-      sx,
-      sy,
-      this.frameWidth,
-      this.frameHeight,
-      -this.frameWidth / 2,
-      0,
-      this.frameWidth,
-      this.frameHeight,
-    )
-
-    this.ctx.restore()
 
     if (this.levelEnded) {
       this.drawLevelEndedOverlay()
