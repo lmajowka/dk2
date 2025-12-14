@@ -109,6 +109,7 @@ export default class extends Controller {
     this.currentFrame = 0
     this.direction = "right"
     this.walking = false
+    this.spriteIsPaused = false
     this.levelEnded = false
     this.levelEndedTime = 0
 
@@ -143,6 +144,46 @@ export default class extends Controller {
     this.spriteEl.style.pointerEvents = "none"
     this.spriteEl.style.imageRendering = "pixelated"
     parent.appendChild(this.spriteEl)
+
+    // Canvas oculto para capturar frame quando parado
+    this.spriteCanvas = document.createElement("canvas")
+    this.spriteCanvas.width = this.frameWidth
+    this.spriteCanvas.height = this.frameHeight
+    this.spriteCtx = this.spriteCanvas.getContext("2d")
+
+    // Capturar primeiro frame quando gif carregar
+    this.spriteEl.onload = () => {
+      this.captureStaticFrame()
+    }
+  }
+
+  captureStaticFrame() {
+    if (this.spriteEl.complete) {
+      this.spriteCtx.clearRect(0, 0, this.frameWidth, this.frameHeight)
+      this.spriteCtx.drawImage(this.spriteEl, 0, 0, this.frameWidth, this.frameHeight)
+      this.staticFrameUrl = this.spriteCanvas.toDataURL()
+    }
+  }
+
+  updateSpriteAnimation() {
+    if (!this.spriteEl) return
+
+    if (this.walking) {
+      // Andando: mostrar gif animado (com timestamp para forçar reload e reiniciar animação)
+      if (this.spriteIsPaused) {
+        this.spriteEl.src = this.spriteUrlValue + "?t=" + Date.now()
+        this.spriteIsPaused = false
+      }
+    } else {
+      // Parado: capturar frame atual e mostrar imagem estática
+      if (!this.spriteIsPaused) {
+        this.captureStaticFrame()
+        if (this.staticFrameUrl) {
+          this.spriteEl.src = this.staticFrameUrl
+          this.spriteIsPaused = true
+        }
+      }
+    }
   }
 
   disconnect() {
@@ -438,7 +479,9 @@ export default class extends Controller {
       }
     }
 
-    // Atualizar posição do elemento img do sprite
+    // Atualizar animação e posição do elemento img do sprite
+    this.updateSpriteAnimation()
+    
     if (this.spriteEl) {
       const canvasRect = this.canvas.getBoundingClientRect()
       const parentRect = this.canvas.parentNode.getBoundingClientRect()
