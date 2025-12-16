@@ -19,6 +19,8 @@ export default class extends Controller {
     goalTileId: Number,
     map: Array,
     levelCols: Number,
+    props: Array,
+    propUrls: Array,
   }
 
   buildDefaultMap() {
@@ -93,6 +95,17 @@ export default class extends Controller {
         this.tileImages[index + 1] = img
       })
     }
+
+    // Load props
+    this.props = this.hasPropsValue ? this.propsValue : []
+    this.propImages = {}
+    const propUrls = this.hasPropUrlsValue ? this.propUrlsValue : []
+
+    propUrls.forEach((propData) => {
+      const img = new Image()
+      img.src = propData.url
+      this.propImages[propData.id] = img
+    })
 
     this.worldX = this.canvas.width / 2
     this.cameraX = 0
@@ -494,6 +507,9 @@ export default class extends Controller {
       this.drawBottomAlignedCover(this.background)
     }
 
+    // Draw props behind everything else
+    this.drawProps()
+
     if (this.tileWidth && this.tileHeight) {
       if (this.grid) {
         const rows = this.grid.length
@@ -587,5 +603,26 @@ export default class extends Controller {
     const sy = ih - sh
 
     this.ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch)
+  }
+
+  drawProps() {
+    if (!this.props || this.props.length === 0) return
+
+    this.props.forEach((prop) => {
+      const img = this.propImages[prop.id]
+      if (!img || !img.complete) return
+
+      const drawX = prop.x - this.cameraX
+      const drawY = prop.y - this.cameraY
+
+      // Only draw if prop is visible on screen
+      const propWidth = img.naturalWidth || img.width || 64
+      const propHeight = img.naturalHeight || img.height || 64
+
+      if (drawX + propWidth < 0 || drawX > this.canvas.width) return
+      if (drawY + propHeight < 0 || drawY > this.canvas.height) return
+
+      this.ctx.drawImage(img, drawX, drawY)
+    })
   }
 }

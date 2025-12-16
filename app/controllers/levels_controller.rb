@@ -44,12 +44,20 @@ class LevelsController < ApplicationController
   private
 
   def normalized_level_params
-    permitted = params.require(:level).permit(:name, :map)
+    permitted = params.require(:level).permit(:name, :map, :props)
 
     if permitted[:map].is_a?(String)
       begin
         permitted[:map] = JSON.parse(permitted[:map])
       rescue JSON::ParserError
+      end
+    end
+
+    if permitted[:props].is_a?(String)
+      begin
+        permitted[:props] = JSON.parse(permitted[:props])
+      rescue JSON::ParserError
+        permitted[:props] = []
       end
     end
 

@@ -36,4 +36,23 @@ module ApplicationHelper
   def tile_urls_json
     tile_assets.map { |t| asset_path(t[:path]) }.to_json
   end
+
+  def prop_assets
+    props_path = Rails.root.join("app", "assets", "images", "background_props")
+    return [] unless props_path.exist?
+
+    Dir.glob(props_path.join("*.{png,svg,jpg,jpeg}")).sort.map.with_index(1) do |file, index|
+      ext = File.extname(file)
+      filename = File.basename(file, ext)
+      {
+        id: index,
+        name: filename.titleize,
+        path: "background_props/#{filename}#{ext}"
+      }
+    end
+  end
+
+  def prop_urls_json
+    prop_assets.map { |p| { id: p[:id], url: asset_path(p[:path]), name: p[:name] } }.to_json
+  end
 end

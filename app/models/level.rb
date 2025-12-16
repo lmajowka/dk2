@@ -1,5 +1,6 @@
 class Level < ApplicationRecord
   attribute :map, :json, default: -> { [] }
+  attribute :props, :json, default: -> { [] }
 
   validates :name, presence: true
 

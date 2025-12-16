@@ -17,5 +17,7 @@
   data-player-punch-url-value="<%= asset_path("seya_soco.gif") %>"
   data-player-tile-urls-value="<%= tile_urls_json %>"
   data-player-goal-tile-id-value="<%= goal_tile_id %>"
-  data-player-map-value='<%= @level.map.to_json %>'></canvas>
+  data-player-map-value='<%= @level.map.to_json %>'
+  data-player-props-value='<%= @level.props.to_json %>'
+  data-player-prop-urls-value="<%= prop_urls_json %>"></canvas>
 </div>

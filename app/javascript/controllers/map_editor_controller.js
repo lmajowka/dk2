@@ -1,12 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["grid", "input", "colsInput", "palette"]
+  static targets = ["grid", "input", "colsInput", "palette", "propsInput", "propsPalette", "propsPreview"]
   static values = {
     rows: Number,
     cols: Number,
     initialMap: Array,
     tileUrls: Array,
+    propAssets: Array,
+    initialProps: Array,
   }
 
   connect() {
@@ -46,9 +48,26 @@ export default class extends Controller {
       this.tileImages[index + 1] = { url, img }
     })
 
+    // Props initialization
+    this.props = this.hasInitialPropsValue && Array.isArray(this.initialPropsValue)
+      ? [...this.initialPropsValue]
+      : []
+    this.propAssets = this.hasPropAssetsValue ? this.propAssetsValue : []
+    this.selectedProp = this.propAssets.length > 0 ? this.propAssets[0].id : null
+    this.propImages = {}
+
+    this.propAssets.forEach((prop) => {
+      const img = new Image()
+      img.src = prop.url
+      this.propImages[prop.id] = { url: prop.url, img, name: prop.name }
+    })
+
     this.render()
     this.renderPalette()
+    this.renderPropsPalette()
+    this.renderPropsPreview()
     this.syncInput()
+    this.syncPropsInput()
   }
 
   selectTile(event) {
@@ -215,5 +234,121 @@ export default class extends Controller {
     if (value === 1) return "#8B4513"
     if (value === 2) return "#228B22"
     return "#111"
+  }
+
+  // Props methods
+  selectProp(event) {
+    const propId = Number(event.params.prop)
+    if (this.propImages[propId]) {
+      this.selectedProp = propId
+      this.renderPropsPalette()
+    }
+  }
+
+  renderPropsPalette() {
+    if (!this.hasPropsPaletteTarget) return
+
+    const items = this.propsPaletteTarget.querySelectorAll("[data-prop]")
+    items.forEach((item) => {
+      const propId = Number(item.dataset.prop)
+      if (propId === this.selectedProp) {
+        item.classList.add("selected")
+      } else {
+        item.classList.remove("selected")
+      }
+    })
+  }
+
+  addProp(event) {
+    event.preventDefault()
+    if (this.selectedProp === null) return
+
+    const prop = this.propImages[this.selectedProp]
+    if (!prop) return
+
+    // Default position at center of visible area
+    const cellSize = 32
+    const defaultX = Math.floor(this.cols / 2) * cellSize
+    const defaultY = Math.floor(this.rows / 2) * cellSize
+
+    this.props.push({
+      id: this.selectedProp,
+      x: defaultX,
+      y: defaultY
+    })
+
+    this.renderPropsPreview()
+    this.syncPropsInput()
+  }
+
+  removeProp(event) {
+    event.preventDefault()
+    const index = Number(event.params.index)
+    if (index >= 0 && index < this.props.length) {
+      this.props.splice(index, 1)
+      this.renderPropsPreview()
+      this.syncPropsInput()
+    }
+  }
+
+  updatePropPosition(event) {
+    const index = Number(event.target.dataset.propIndex)
+    const axis = event.target.dataset.propAxis
+    const value = Number(event.target.value)
+
+    if (index >= 0 && index < this.props.length && (axis === "x" || axis === "y")) {
+      this.props[index][axis] = value
+      this.syncPropsInput()
+    }
+  }
+
+  renderPropsPreview() {
+    if (!this.hasPropsPreviewTarget) return
+
+    if (this.props.length === 0) {
+      this.propsPreviewTarget.innerHTML = '<p class="props-empty">Nenhuma prop adicionada. Clique em "Adicionar Prop" para começar.</p>'
+      return
+    }
+
+    let html = '<div class="props-list">'
+    this.props.forEach((prop, index) => {
+      const propData = this.propImages[prop.id]
+      const name = propData ? propData.name : `Prop ${prop.id}`
+      const url = propData ? propData.url : ""
+
+      html += `
+        <div class="prop-item">
+          <div class="prop-item-preview" style="background-image: url('${url}')"></div>
+          <div class="prop-item-info">
+            <span class="prop-item-name">${name}</span>
+            <div class="prop-item-coords">
+              <label>
+                X: <input type="number" value="${prop.x}" 
+                  data-prop-index="${index}" 
+                  data-prop-axis="x"
+                  data-action="change->map-editor#updatePropPosition">
+              </label>
+              <label>
+                Y: <input type="number" value="${prop.y}" 
+                  data-prop-index="${index}" 
+                  data-prop-axis="y"
+                  data-action="change->map-editor#updatePropPosition">
+              </label>
+            </div>
+          </div>
+          <button type="button" class="prop-item-remove" 
+            data-action="click->map-editor#removeProp" 
+            data-map-editor-index-param="${index}">✕</button>
+        </div>
+      `
+    })
+    html += '</div>'
+
+    this.propsPreviewTarget.innerHTML = html
+  }
+
+  syncPropsInput() {
+    if (!this.hasPropsInputTarget) return
+    this.propsInputTarget.value = JSON.stringify(this.props)
   }
 }

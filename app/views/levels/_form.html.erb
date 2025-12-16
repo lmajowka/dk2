@@ -18,7 +18,9 @@
     class="map-editor-container"
     data-controller="map-editor"
     data-map-editor-initial-map-value='<%= level.map.to_json %>'
-    data-map-editor-tile-urls-value="<%= tile_urls_json %>">
+    data-map-editor-tile-urls-value="<%= tile_urls_json %>"
+    data-map-editor-prop-assets-value="<%= prop_urls_json %>"
+    data-map-editor-initial-props-value='<%= level.props.to_json %>'>
 
     <div class="map-editor-header">
       <h3 class="map-editor-title">🗺️ Map Editor</h3>
@@ -69,6 +71,44 @@
 
     <div class="grid-container">
       <div data-map-editor-target="grid"></div>
+    </div>
+
+    <!-- Props Section -->
+    <div class="props-section">
+      <div class="props-header">
+        <h3 class="props-title">🏛️ Background Props</h3>
+      </div>
+
+      <% if prop_assets.any? %>
+        <div class="props-palette-container" data-map-editor-target="propsPalette">
+          <span class="palette-label">Selecionar Prop:</span>
+          <div class="palette-items">
+            <% prop_assets.each_with_index do |prop, index| %>
+              <button
+                type="button"
+                class="palette-item<%= index == 0 ? ' selected' : '' %>"
+                data-prop="<%= prop[:id] %>"
+                data-action="click->map-editor#selectProp"
+                data-map-editor-prop-param="<%= prop[:id] %>"
+                style="background-image: url('<%= asset_path(prop[:path]) %>')"
+                title="<%= prop[:name] %>">
+                <span class="palette-item-label"><%= prop[:name] %></span>
+              </button>
+            <% end %>
+          </div>
+          <button type="button" class="map-editor-btn map-editor-btn-add" data-action="click->map-editor#addProp">
+            + Adicionar Prop
+          </button>
+        </div>
+
+        <div class="props-preview-container" data-map-editor-target="propsPreview">
+          <p class="props-empty">Nenhuma prop adicionada. Clique em "Adicionar Prop" para começar.</p>
+        </div>
+      <% else %>
+        <p class="props-empty">Nenhuma prop disponível. Adicione imagens na pasta <code>background_props</code>.</p>
+      <% end %>
+
+      <%= f.hidden_field :props, value: level.props.to_json, data: { map_editor_target: "propsInput" } %>
     </div>
   </div>
 
