@@ -14,6 +14,7 @@ export default class extends Controller {
   static values = {
     backgroundUrl: String,
     spriteUrl: String,
+    punchUrl: String,
     tileUrls: Array,
     goalTileId: Number,
     map: Array,
@@ -110,6 +111,8 @@ export default class extends Controller {
     this.direction = "right"
     this.walking = false
     this.spriteIsPaused = false
+    this.punching = false
+    this.punchTimer = 0
     this.levelEnded = false
     this.levelEndedTime = 0
 
@@ -168,6 +171,11 @@ export default class extends Controller {
   updateSpriteAnimation() {
     if (!this.spriteEl) return
 
+    // Punching takes priority
+    if (this.punching) {
+      return
+    }
+
     if (this.walking) {
       // Andando: mostrar gif animado (com timestamp para forçar reload e reiniciar animação)
       if (this.spriteIsPaused) {
@@ -182,6 +190,34 @@ export default class extends Controller {
           this.spriteEl.src = this.staticFrameUrl
           this.spriteIsPaused = true
         }
+      }
+    }
+  }
+
+  startPunch() {
+    this.punching = true
+    this.punchTimer = 1500
+    this.prePunchSrc = this.spriteEl.src
+    this.spriteEl.src = this.punchUrlValue + "?t=" + Date.now()
+  }
+
+  updatePunch(delta) {
+    if (!this.punching) return
+
+    this.punchTimer -= delta
+    if (this.punchTimer <= 0) {
+      this.punching = false
+      this.punchTimer = 0
+      // Restore previous animation state
+      if (this.walking) {
+        this.spriteEl.src = this.spriteUrlValue + "?t=" + Date.now()
+        this.spriteIsPaused = false
+      } else if (this.staticFrameUrl) {
+        this.spriteEl.src = this.staticFrameUrl
+        this.spriteIsPaused = true
+      } else {
+        this.spriteEl.src = this.spriteUrlValue
+        this.spriteIsPaused = false
       }
     }
   }
@@ -212,6 +248,10 @@ export default class extends Controller {
       if (this.onGround) {
         this.vy = -this.jumpVelocity
         this.onGround = false
+      }
+    } else if (e.key === "s" || e.key === "S") {
+      if (!this.punching && this.hasPunchUrlValue) {
+        this.startPunch()
       }
     }
   }
@@ -245,6 +285,8 @@ export default class extends Controller {
       this.levelEndedTime += delta
       return
     }
+
+    this.updatePunch(delta)
 
     const dt = delta / 1000
 
