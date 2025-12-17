@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["grid", "input", "colsInput", "palette", "propsInput", "propsPalette", "propsPreview", "enemiesInput", "enemiesPreview", "optionsPanel", "tilesPanel", "propsPanel", "enemiesPanel"]
+  static targets = ["grid", "input", "colsInput", "palette", "propsInput", "propsPalette", "propsPreview", "enemiesInput", "enemiesPreview", "optionsPanel", "tilesPanel", "propsPanel", "enemiesPanel", "gridWrapper", "entitiesOverlay"]
   static values = {
     rows: Number,
     cols: Number,
@@ -75,6 +75,7 @@ export default class extends Controller {
     this.renderPropsPalette()
     this.renderPropsPreview()
     this.renderEnemiesPreview()
+    this.renderEntitiesOverlay()
     this.syncInput()
     this.syncPropsInput()
     this.syncEnemiesInput()
@@ -265,6 +266,115 @@ export default class extends Controller {
     return "#111"
   }
 
+  renderEntitiesOverlay() {
+    if (!this.hasEntitiesOverlayTarget || !this.hasGridWrapperTarget) return
+
+    const cellSize = 32
+    const cols = this.cols
+    const rows = this.rows
+    const width = cols * cellSize + (cols - 1) + 8
+    const height = rows * cellSize + (rows - 1) + 8
+
+    this.gridWrapperTarget.style.position = "relative"
+    this.gridWrapperTarget.style.width = "fit-content"
+
+    this.entitiesOverlayTarget.style.position = "absolute"
+    this.entitiesOverlayTarget.style.top = "4px"
+    this.entitiesOverlayTarget.style.left = "4px"
+    this.entitiesOverlayTarget.style.width = `${cols * cellSize + (cols - 1)}px`
+    this.entitiesOverlayTarget.style.height = `${rows * cellSize + (rows - 1)}px`
+    this.entitiesOverlayTarget.style.pointerEvents = "none"
+
+    this.entitiesOverlayTarget.innerHTML = ""
+
+    this.props.forEach((prop, index) => {
+      const propData = this.propImages[prop.id]
+      if (!propData) return
+
+      const el = document.createElement("div")
+      el.className = "entity-marker entity-prop"
+      el.style.position = "absolute"
+      el.style.left = `${prop.x}px`
+      el.style.top = `${prop.y}px`
+      el.style.width = "48px"
+      el.style.height = "48px"
+      el.style.backgroundImage = `url(${propData.url})`
+      el.style.backgroundSize = "contain"
+      el.style.backgroundRepeat = "no-repeat"
+      el.style.backgroundPosition = "center"
+      el.style.cursor = "move"
+      el.style.pointerEvents = "auto"
+      el.dataset.entityType = "prop"
+      el.dataset.entityIndex = index
+      el.title = propData.name
+
+      this.setupDrag(el, index, "prop")
+      this.entitiesOverlayTarget.appendChild(el)
+    })
+
+    this.enemies.forEach((enemy, index) => {
+      const el = document.createElement("div")
+      el.className = "entity-marker entity-enemy"
+      el.style.position = "absolute"
+      el.style.left = `${enemy.x}px`
+      el.style.top = `${enemy.y}px`
+      el.style.width = "32px"
+      el.style.height = "32px"
+      el.style.backgroundImage = `url(${this.enemyUrl})`
+      el.style.backgroundSize = "contain"
+      el.style.backgroundRepeat = "no-repeat"
+      el.style.backgroundPosition = "center"
+      el.style.cursor = "move"
+      el.style.pointerEvents = "auto"
+      el.dataset.entityType = "enemy"
+      el.dataset.entityIndex = index
+      el.title = `Inimigo ${index + 1}`
+
+      this.setupDrag(el, index, "enemy")
+      this.entitiesOverlayTarget.appendChild(el)
+    })
+  }
+
+  setupDrag(el, index, type) {
+    let startX, startY, initialX, initialY
+
+    const onMouseDown = (e) => {
+      e.preventDefault()
+      startX = e.clientX
+      startY = e.clientY
+      const entity = type === "prop" ? this.props[index] : this.enemies[index]
+      initialX = entity.x
+      initialY = entity.y
+
+      document.addEventListener("mousemove", onMouseMove)
+      document.addEventListener("mouseup", onMouseUp)
+    }
+
+    const onMouseMove = (e) => {
+      const dx = e.clientX - startX
+      const dy = e.clientY - startY
+      const entity = type === "prop" ? this.props[index] : this.enemies[index]
+      entity.x = Math.max(0, initialX + dx)
+      entity.y = Math.max(0, initialY + dy)
+      el.style.left = `${entity.x}px`
+      el.style.top = `${entity.y}px`
+    }
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+      if (type === "prop") {
+        this.syncPropsInput()
+        this.renderPropsPreview()
+      } else {
+        this.syncEnemiesInput()
+        this.renderEnemiesPreview()
+      }
+    }
+
+    el.addEventListener("mousedown", onMouseDown)
+  }
+
   // Props methods
   selectProp(event) {
     const propId = Number(event.params.prop)
@@ -307,6 +417,7 @@ export default class extends Controller {
     })
 
     this.renderPropsPreview()
+    this.renderEntitiesOverlay()
     this.syncPropsInput()
   }
 
@@ -316,6 +427,7 @@ export default class extends Controller {
     if (index >= 0 && index < this.props.length) {
       this.props.splice(index, 1)
       this.renderPropsPreview()
+      this.renderEntitiesOverlay()
       this.syncPropsInput()
     }
   }
@@ -327,6 +439,7 @@ export default class extends Controller {
 
     if (index >= 0 && index < this.props.length && (axis === "x" || axis === "y")) {
       this.props[index][axis] = value
+      this.renderEntitiesOverlay()
       this.syncPropsInput()
     }
   }
@@ -392,6 +505,7 @@ export default class extends Controller {
 
     this.enemies.push({ x: defaultX, y: defaultY })
     this.renderEnemiesPreview()
+    this.renderEntitiesOverlay()
     this.syncEnemiesInput()
   }
 
@@ -401,6 +515,7 @@ export default class extends Controller {
     if (index >= 0 && index < this.enemies.length) {
       this.enemies.splice(index, 1)
       this.renderEnemiesPreview()
+      this.renderEntitiesOverlay()
       this.syncEnemiesInput()
     }
   }
@@ -412,6 +527,7 @@ export default class extends Controller {
 
     if (index >= 0 && index < this.enemies.length && (axis === "x" || axis === "y")) {
       this.enemies[index][axis] = value
+      this.renderEntitiesOverlay()
       this.syncEnemiesInput()
     }
   }

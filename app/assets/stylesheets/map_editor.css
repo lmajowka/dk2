@@ -505,3 +505,36 @@
 .control-panel .props-preview-container {
   margin-top: 8px;
 }
+
+/* Grid Wrapper for Entities Overlay */
+.grid-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.entities-overlay {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  pointer-events: none;
+}
+
+.entity-marker {
+  position: absolute;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: box-shadow 0.2s;
+}
+
+.entity-marker:hover {
+  box-shadow: 0 4px 16px rgba(233, 69, 96, 0.6);
+  z-index: 100;
+}
+
+.entity-prop {
+  border: 2px solid rgba(78, 205, 196, 0.6);
+}
+
+.entity-enemy {
+  border: 2px solid rgba(233, 69, 96, 0.6);
+}

@@ -122,7 +122,10 @@
     <%= f.hidden_field :enemies, value: level.enemies.to_json, data: { map_editor_target: "enemiesInput" } %>
 
     <div class="grid-container">
-      <div data-map-editor-target="grid"></div>
+      <div class="grid-wrapper" data-map-editor-target="gridWrapper">
+        <div data-map-editor-target="grid"></div>
+        <div class="entities-overlay" data-map-editor-target="entitiesOverlay"></div>
+      </div>
     </div>
   </div>
 
