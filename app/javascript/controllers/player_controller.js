@@ -120,6 +120,8 @@ export default class extends Controller {
     this.cameraY = 0
     this.maxLives = 3
     this.lives = this.maxLives
+    this.maxHealth = 100
+    this.health = this.maxHealth
     this.currentFrame = 0
     this.direction = "right"
     this.walking = false
@@ -141,6 +143,8 @@ export default class extends Controller {
 
     this.lastTimestamp = 0
     this.rafId = requestAnimationFrame(this.loop.bind(this))
+
+    this.setupHealthBarElement()
   }
 
   setupSpriteElement() {
@@ -171,6 +175,51 @@ export default class extends Controller {
     this.spriteEl.onload = () => {
       this.captureStaticFrame()
     }
+  }
+
+  setupHealthBarElement() {
+    const parent = this.canvas.parentNode
+    const barContainer = document.createElement("div")
+    barContainer.style.position = "absolute"
+    barContainer.style.top = "10px"
+    barContainer.style.left = "10px"
+    barContainer.style.width = "200px"
+    barContainer.style.height = "20px"
+    barContainer.style.border = "2px solid #000"
+    barContainer.style.backgroundColor = "rgba(0, 0, 0, 0.4)"
+
+    const barFill = document.createElement("div")
+    barFill.style.height = "100%"
+    barFill.style.width = "100%"
+    barFill.style.backgroundColor = "#e53935"
+
+    barContainer.appendChild(barFill)
+    parent.appendChild(barContainer)
+
+    this.healthBarContainer = barContainer
+    this.healthBarFill = barFill
+    this.updateHealthBar()
+  }
+
+  updateHealthBar() {
+    if (!this.healthBarFill || !this.maxHealth) return
+
+    const clampedHealth = Math.max(0, Math.min(this.health, this.maxHealth))
+    const percent = (clampedHealth / this.maxHealth) * 100
+    this.healthBarFill.style.width = `${percent}%`
+  }
+
+  takeDamage(amount) {
+    if (amount <= 0) return
+
+    this.health -= amount
+    if (this.health <= 0) {
+      this.health = 0
+      this.loseLifeAndRestart()
+      return
+    }
+
+    this.updateHealthBar()
   }
 
   captureStaticFrame() {
@@ -245,6 +294,10 @@ export default class extends Controller {
 
     if (this.spriteEl && this.spriteEl.parentNode) {
       this.spriteEl.remove()
+    }
+
+    if (this.healthBarContainer && this.healthBarContainer.parentNode) {
+      this.healthBarContainer.remove()
     }
   }
 
@@ -333,6 +386,7 @@ export default class extends Controller {
       return
     }
 
+    this.updateHealthBar()
   }
 
   getLevelWidthPx() {
@@ -418,6 +472,8 @@ export default class extends Controller {
     if (this.lives <= 0) {
       this.lives = this.maxLives
     }
+    this.health = this.maxHealth
+    this.updateHealthBar()
     this.respawn()
   }
 
@@ -459,6 +515,7 @@ export default class extends Controller {
     this.vy = 0
     this.updateCamera()
     this.y = this.worldY - this.cameraY
+    this.updateHealthBar()
   }
 
   updateCamera() {
@@ -550,6 +607,8 @@ export default class extends Controller {
       this.spriteEl.style.top = `${offsetY + this.y}px`
       this.spriteEl.style.transform = this.direction === "left" ? "scaleX(-1)" : "scaleX(1)"
     }
+
+    this.updateHealthBar()
 
     if (this.levelEnded) {
       this.drawLevelEndedOverlay()
