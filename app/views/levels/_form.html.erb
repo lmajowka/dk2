@@ -24,117 +24,105 @@
     data-map-editor-initial-enemies-value='<%= level.enemies.to_json %>'
     data-map-editor-enemy-url-value="<%= asset_path('enemy.gif') %>">
 
-    <div class="map-editor-header">
-      <h3 class="map-editor-title">🗺️ Map Editor</h3>
-      <div class="map-editor-controls">
-        <label>
-          Colunas
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value="<%= (level.map[0]&.length || 24) %>"
-            data-map-editor-target="colsInput"
-            data-action="change->map-editor#setCols">
-        </label>
-        <button type="button" class="map-editor-btn map-editor-btn-secondary" data-action="click->map-editor#addCols" data-map-editor-delta-param="10">+10</button>
-        <button type="button" class="map-editor-btn map-editor-btn-secondary" data-action="click->map-editor#addCols" data-map-editor-delta-param="-10">-10</button>
+    <!-- Control Panel Toolbar -->
+    <div class="control-toolbar">
+      <button type="button" class="toolbar-btn" data-action="click->map-editor#togglePanel" data-map-editor-panel-param="options" title="Opções">
+        <span class="toolbar-icon">⚙️</span>
+        <span class="toolbar-label">Opções</span>
+      </button>
+      <button type="button" class="toolbar-btn active" data-action="click->map-editor#togglePanel" data-map-editor-panel-param="tiles" title="Tiles">
+        <span class="toolbar-icon">🧱</span>
+        <span class="toolbar-label">Tiles</span>
+      </button>
+      <button type="button" class="toolbar-btn" data-action="click->map-editor#togglePanel" data-map-editor-panel-param="props" title="Props">
+        <span class="toolbar-icon">🏛️</span>
+        <span class="toolbar-label">Props</span>
+      </button>
+      <button type="button" class="toolbar-btn" data-action="click->map-editor#togglePanel" data-map-editor-panel-param="enemies" title="Inimigos">
+        <span class="toolbar-icon">👾</span>
+        <span class="toolbar-label">Inimigos</span>
+      </button>
+    </div>
+
+    <!-- Options Panel -->
+    <div class="control-panel" data-map-editor-target="optionsPanel" data-panel="options" style="display: none;">
+      <div class="panel-content">
+        <div class="map-editor-controls">
+          <label>
+            Colunas
+            <input type="number" min="1" step="1" value="<%= (level.map[0]&.length || 24) %>"
+              data-map-editor-target="colsInput" data-action="change->map-editor#setCols">
+          </label>
+          <button type="button" class="map-editor-btn map-editor-btn-secondary" data-action="click->map-editor#addCols" data-map-editor-delta-param="10">+10</button>
+          <button type="button" class="map-editor-btn map-editor-btn-secondary" data-action="click->map-editor#addCols" data-map-editor-delta-param="-10">-10</button>
+        </div>
       </div>
     </div>
 
-    <div class="palette-container" data-map-editor-target="palette">
-      <span class="palette-label">Pincel:</span>
-      <div class="palette-items">
-        <button
-          type="button"
-          class="palette-item empty-tile"
-          data-tile="0"
-          data-action="click->map-editor#selectTile"
-          data-map-editor-tile-param="0"
-          title="Apagar">
-          <span class="palette-item-label">Vazio</span>
-        </button>
-        <% tile_assets.each_with_index do |tile, index| %>
-          <button
-            type="button"
-            class="palette-item<%= index == 0 ? ' selected' : '' %>"
-            data-tile="<%= tile[:id] %>"
-            data-action="click->map-editor#selectTile"
-            data-map-editor-tile-param="<%= tile[:id] %>"
-            style="background-image: url('<%= asset_path(tile[:path]) %>')"
-            title="<%= tile[:name] %>">
-            <span class="palette-item-label"><%= tile[:name] %></span>
+    <!-- Tiles Panel -->
+    <div class="control-panel" data-map-editor-target="tilesPanel" data-panel="tiles">
+      <div class="panel-content">
+        <div class="palette-items" data-map-editor-target="palette">
+          <button type="button" class="palette-item empty-tile" data-tile="0"
+            data-action="click->map-editor#selectTile" data-map-editor-tile-param="0" title="Apagar">
           </button>
-        <% end %>
+          <% tile_assets.each_with_index do |tile, index| %>
+            <button type="button" class="palette-item<%= index == 0 ? ' selected' : '' %>"
+              data-tile="<%= tile[:id] %>" data-action="click->map-editor#selectTile"
+              data-map-editor-tile-param="<%= tile[:id] %>"
+              style="background-image: url('<%= asset_path(tile[:path]) %>')" title="<%= tile[:name] %>">
+            </button>
+          <% end %>
+        </div>
       </div>
     </div>
 
-    <%= f.hidden_field :map, value: level.map.to_json, data: { map_editor_target: "input" } %>
-
-    <div class="grid-container">
-      <div data-map-editor-target="grid"></div>
-    </div>
-
-    <!-- Props Section -->
-    <div class="props-section">
-      <div class="props-header">
-        <h3 class="props-title">🏛️ Background Props</h3>
-      </div>
-
-      <% if prop_assets.any? %>
-        <div class="props-palette-container" data-map-editor-target="propsPalette">
-          <span class="palette-label">Selecionar Prop:</span>
-          <div class="palette-items">
+    <!-- Props Panel -->
+    <div class="control-panel" data-map-editor-target="propsPanel" data-panel="props" style="display: none;">
+      <div class="panel-content">
+        <% if prop_assets.any? %>
+          <div class="palette-items" data-map-editor-target="propsPalette">
             <% prop_assets.each_with_index do |prop, index| %>
-              <button
-                type="button"
-                class="palette-item<%= index == 0 ? ' selected' : '' %>"
-                data-prop="<%= prop[:id] %>"
-                data-action="click->map-editor#selectProp"
+              <button type="button" class="palette-item<%= index == 0 ? ' selected' : '' %>"
+                data-prop="<%= prop[:id] %>" data-action="click->map-editor#selectProp"
                 data-map-editor-prop-param="<%= prop[:id] %>"
-                style="background-image: url('<%= asset_path(prop[:path]) %>')"
-                title="<%= prop[:name] %>">
-                <span class="palette-item-label"><%= prop[:name] %></span>
+                style="background-image: url('<%= asset_path(prop[:path]) %>')" title="<%= prop[:name] %>">
               </button>
             <% end %>
           </div>
           <button type="button" class="map-editor-btn map-editor-btn-add" data-action="click->map-editor#addProp">
             + Adicionar Prop
           </button>
-        </div>
-
-        <div class="props-preview-container" data-map-editor-target="propsPreview">
-          <p class="props-empty">Nenhuma prop adicionada. Clique em "Adicionar Prop" para começar.</p>
-        </div>
-      <% else %>
-        <p class="props-empty">Nenhuma prop disponível. Adicione imagens na pasta <code>background_props</code>.</p>
-      <% end %>
-
-      <%= f.hidden_field :props, value: level.props.to_json, data: { map_editor_target: "propsInput" } %>
+          <div class="props-preview-container" data-map-editor-target="propsPreview">
+            <p class="props-empty">Nenhuma prop adicionada.</p>
+          </div>
+        <% else %>
+          <p class="props-empty">Nenhuma prop disponível.</p>
+        <% end %>
+      </div>
     </div>
 
-    <!-- Enemies Section -->
-    <div class="props-section">
-      <div class="props-header">
-        <h3 class="props-title">👾 Inimigos</h3>
-      </div>
-
-      <div class="props-palette-container">
+    <!-- Enemies Panel -->
+    <div class="control-panel" data-map-editor-target="enemiesPanel" data-panel="enemies" style="display: none;">
+      <div class="panel-content">
         <div class="palette-items">
-          <div class="palette-item" style="background-image: url('<%= asset_path('enemy.gif') %>')">
-            <span class="palette-item-label">Inimigo</span>
-          </div>
+          <div class="palette-item" style="background-image: url('<%= asset_path('enemy.gif') %>')" title="Inimigo"></div>
         </div>
         <button type="button" class="map-editor-btn map-editor-btn-add" data-action="click->map-editor#addEnemy">
           + Adicionar Inimigo
         </button>
+        <div class="props-preview-container" data-map-editor-target="enemiesPreview">
+          <p class="props-empty">Nenhum inimigo adicionado.</p>
+        </div>
       </div>
+    </div>
 
-      <div class="props-preview-container" data-map-editor-target="enemiesPreview">
-        <p class="props-empty">Nenhum inimigo adicionado. Clique em "Adicionar Inimigo" para começar.</p>
-      </div>
+    <%= f.hidden_field :map, value: level.map.to_json, data: { map_editor_target: "input" } %>
+    <%= f.hidden_field :props, value: level.props.to_json, data: { map_editor_target: "propsInput" } %>
+    <%= f.hidden_field :enemies, value: level.enemies.to_json, data: { map_editor_target: "enemiesInput" } %>
 
-      <%= f.hidden_field :enemies, value: level.enemies.to_json, data: { map_editor_target: "enemiesInput" } %>
+    <div class="grid-container">
+      <div data-map-editor-target="grid"></div>
     </div>
   </div>
 

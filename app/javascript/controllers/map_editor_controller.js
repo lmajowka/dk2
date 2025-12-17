@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["grid", "input", "colsInput", "palette", "propsInput", "propsPalette", "propsPreview", "enemiesInput", "enemiesPreview"]
+  static targets = ["grid", "input", "colsInput", "palette", "propsInput", "propsPalette", "propsPreview", "enemiesInput", "enemiesPreview", "optionsPanel", "tilesPanel", "propsPanel", "enemiesPanel"]
   static values = {
     rows: Number,
     cols: Number,
@@ -78,6 +78,25 @@ export default class extends Controller {
     this.syncInput()
     this.syncPropsInput()
     this.syncEnemiesInput()
+  }
+
+  togglePanel(event) {
+    const panelName = event.params.panel
+    const panels = ["options", "tiles", "props", "enemies"]
+    const toolbarBtns = this.element.querySelectorAll(".toolbar-btn")
+
+    panels.forEach((name) => {
+      const panelTarget = this[`${name}PanelTarget`]
+      const btn = this.element.querySelector(`[data-map-editor-panel-param="${name}"]`)
+      
+      if (name === panelName) {
+        panelTarget.style.display = panelTarget.style.display === "none" ? "block" : "none"
+        btn?.classList.toggle("active", panelTarget.style.display !== "none")
+      } else {
+        panelTarget.style.display = "none"
+        btn?.classList.remove("active")
+      }
+    })
   }
 
   selectTile(event) {

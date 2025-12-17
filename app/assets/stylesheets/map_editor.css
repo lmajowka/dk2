@@ -423,3 +423,85 @@
   background: #e94560;
   color: #fff;
 }
+
+/* Control Toolbar */
+.control-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+}
+
+.toolbar-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.toolbar-btn.active {
+  background: rgba(233, 69, 96, 0.2);
+  border-color: #e94560;
+  box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+}
+
+.toolbar-icon {
+  font-size: 1.5rem;
+}
+
+.toolbar-label {
+  font-size: 0.75rem;
+  color: #a0a0b0;
+  font-weight: 500;
+}
+
+.toolbar-btn.active .toolbar-label {
+  color: #e94560;
+}
+
+/* Control Panels */
+.control-panel {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-panel .palette-items {
+  flex-wrap: wrap;
+}
+
+.control-panel .props-preview-container {
+  margin-top: 8px;
+}
