@@ -261,6 +261,7 @@ export default class extends Controller {
         worldX: enemy.x,
         worldY: enemy.y,
         direction: "left",
+        speed: 50 + Math.random() * 30,
       })
     })
   }
@@ -268,15 +269,13 @@ export default class extends Controller {
   updateEnemies(dt) {
     if (!this.enemySprites || this.enemySprites.length === 0) return
 
-    const enemySpeed = 60
-
     this.enemySprites.forEach((enemy) => {
       const dx = this.worldX - enemy.worldX
       if (dx > 0) {
-        enemy.worldX += enemySpeed * dt
+        enemy.worldX += enemy.speed * dt
         enemy.direction = "right"
       } else if (dx < 0) {
-        enemy.worldX -= enemySpeed * dt
+        enemy.worldX -= enemy.speed * dt
         enemy.direction = "left"
       }
 
