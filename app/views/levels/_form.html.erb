@@ -20,7 +20,9 @@
     data-map-editor-initial-map-value='<%= level.map.to_json %>'
     data-map-editor-tile-urls-value="<%= tile_urls_json %>"
     data-map-editor-prop-assets-value="<%= prop_urls_json %>"
-    data-map-editor-initial-props-value='<%= level.props.to_json %>'>
+    data-map-editor-initial-props-value='<%= level.props.to_json %>'
+    data-map-editor-initial-enemies-value='<%= level.enemies.to_json %>'
+    data-map-editor-enemy-url-value="<%= asset_path('enemy.gif') %>">
 
     <div class="map-editor-header">
       <h3 class="map-editor-title">🗺️ Map Editor</h3>
@@ -109,6 +111,30 @@
       <% end %>
 
       <%= f.hidden_field :props, value: level.props.to_json, data: { map_editor_target: "propsInput" } %>
+    </div>
+
+    <!-- Enemies Section -->
+    <div class="props-section">
+      <div class="props-header">
+        <h3 class="props-title">👾 Inimigos</h3>
+      </div>
+
+      <div class="props-palette-container">
+        <div class="palette-items">
+          <div class="palette-item" style="background-image: url('<%= asset_path('enemy.gif') %>')">
+            <span class="palette-item-label">Inimigo</span>
+          </div>
+        </div>
+        <button type="button" class="map-editor-btn map-editor-btn-add" data-action="click->map-editor#addEnemy">
+          + Adicionar Inimigo
+        </button>
+      </div>
+
+      <div class="props-preview-container" data-map-editor-target="enemiesPreview">
+        <p class="props-empty">Nenhum inimigo adicionado. Clique em "Adicionar Inimigo" para começar.</p>
+      </div>
+
+      <%= f.hidden_field :enemies, value: level.enemies.to_json, data: { map_editor_target: "enemiesInput" } %>
     </div>
   </div>
 

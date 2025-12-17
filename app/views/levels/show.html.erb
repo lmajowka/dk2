@@ -19,5 +19,7 @@
   data-player-goal-tile-id-value="<%= goal_tile_id %>"
   data-player-map-value='<%= @level.map.to_json %>'
   data-player-props-value='<%= @level.props.to_json %>'
-  data-player-prop-urls-value="<%= prop_urls_json %>"></canvas>
+  data-player-prop-urls-value="<%= prop_urls_json %>"
+  data-player-enemies-value='<%= @level.enemies.to_json %>'
+  data-player-enemy-url-value="<%= asset_path('enemy.gif') %>"></canvas>
 </div>

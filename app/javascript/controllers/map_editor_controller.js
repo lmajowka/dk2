@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["grid", "input", "colsInput", "palette", "propsInput", "propsPalette", "propsPreview"]
+  static targets = ["grid", "input", "colsInput", "palette", "propsInput", "propsPalette", "propsPreview", "enemiesInput", "enemiesPreview"]
   static values = {
     rows: Number,
     cols: Number,
@@ -9,6 +9,8 @@ export default class extends Controller {
     tileUrls: Array,
     propAssets: Array,
     initialProps: Array,
+    initialEnemies: Array,
+    enemyUrl: String,
   }
 
   connect() {
@@ -62,12 +64,20 @@ export default class extends Controller {
       this.propImages[prop.id] = { url: prop.url, img, name: prop.name }
     })
 
+    // Enemies initialization
+    this.enemies = this.hasInitialEnemiesValue && Array.isArray(this.initialEnemiesValue)
+      ? [...this.initialEnemiesValue]
+      : []
+    this.enemyUrl = this.hasEnemyUrlValue ? this.enemyUrlValue : ""
+
     this.render()
     this.renderPalette()
     this.renderPropsPalette()
     this.renderPropsPreview()
+    this.renderEnemiesPreview()
     this.syncInput()
     this.syncPropsInput()
+    this.syncEnemiesInput()
   }
 
   selectTile(event) {
@@ -350,5 +360,86 @@ export default class extends Controller {
   syncPropsInput() {
     if (!this.hasPropsInputTarget) return
     this.propsInputTarget.value = JSON.stringify(this.props)
+  }
+
+  // Enemy methods
+  addEnemy(event) {
+    event.preventDefault()
+    if (!this.enemyUrl) return
+
+    const cellSize = 32
+    const defaultX = Math.floor(this.cols / 2) * cellSize
+    const defaultY = Math.floor(this.rows / 2) * cellSize
+
+    this.enemies.push({ x: defaultX, y: defaultY })
+    this.renderEnemiesPreview()
+    this.syncEnemiesInput()
+  }
+
+  removeEnemy(event) {
+    event.preventDefault()
+    const index = Number(event.params.index)
+    if (index >= 0 && index < this.enemies.length) {
+      this.enemies.splice(index, 1)
+      this.renderEnemiesPreview()
+      this.syncEnemiesInput()
+    }
+  }
+
+  updateEnemyPosition(event) {
+    const index = Number(event.target.dataset.enemyIndex)
+    const axis = event.target.dataset.enemyAxis
+    const value = Number(event.target.value)
+
+    if (index >= 0 && index < this.enemies.length && (axis === "x" || axis === "y")) {
+      this.enemies[index][axis] = value
+      this.syncEnemiesInput()
+    }
+  }
+
+  renderEnemiesPreview() {
+    if (!this.hasEnemiesPreviewTarget) return
+
+    if (this.enemies.length === 0) {
+      this.enemiesPreviewTarget.innerHTML = '<p class="props-empty">Nenhum inimigo adicionado. Clique em "Adicionar Inimigo" para começar.</p>'
+      return
+    }
+
+    let html = '<div class="props-list">'
+    this.enemies.forEach((enemy, index) => {
+      html += `
+        <div class="prop-item">
+          <div class="prop-item-preview" style="background-image: url('${this.enemyUrl}')"></div>
+          <div class="prop-item-info">
+            <span class="prop-item-name">Inimigo ${index + 1}</span>
+            <div class="prop-item-coords">
+              <label>
+                X: <input type="number" value="${enemy.x}" 
+                  data-enemy-index="${index}" 
+                  data-enemy-axis="x"
+                  data-action="change->map-editor#updateEnemyPosition">
+              </label>
+              <label>
+                Y: <input type="number" value="${enemy.y}" 
+                  data-enemy-index="${index}" 
+                  data-enemy-axis="y"
+                  data-action="change->map-editor#updateEnemyPosition">
+              </label>
+            </div>
+          </div>
+          <button type="button" class="prop-item-remove" 
+            data-action="click->map-editor#removeEnemy" 
+            data-map-editor-index-param="${index}">✕</button>
+        </div>
+      `
+    })
+    html += '</div>'
+
+    this.enemiesPreviewTarget.innerHTML = html
+  }
+
+  syncEnemiesInput() {
+    if (!this.hasEnemiesInputTarget) return
+    this.enemiesInputTarget.value = JSON.stringify(this.enemies)
   }
 }

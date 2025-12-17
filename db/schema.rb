@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_16_113957) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_17_194332) do
   create_table "levels", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.json "enemies", default: [], null: false
     t.json "map", default: [], null: false
     t.string "name", null: false
     t.json "props", default: [], null: false

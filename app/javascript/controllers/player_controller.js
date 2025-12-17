@@ -21,6 +21,8 @@ export default class extends Controller {
     levelCols: Number,
     props: Array,
     propUrls: Array,
+    enemies: Array,
+    enemyUrl: String,
   }
 
   buildDefaultMap() {
@@ -145,6 +147,11 @@ export default class extends Controller {
     this.rafId = requestAnimationFrame(this.loop.bind(this))
 
     this.setupHealthBarElement()
+    this.setupEnemies()
+
+    // Damage immunity
+    this.damageImmune = false
+    this.damageImmuneTimer = 0
   }
 
   setupSpriteElement() {
@@ -211,8 +218,12 @@ export default class extends Controller {
 
   takeDamage(amount) {
     if (amount <= 0) return
+    if (this.damageImmune) return
 
     this.health -= amount
+    this.damageImmune = true
+    this.damageImmuneTimer = 2000
+
     if (this.health <= 0) {
       this.health = 0
       this.loseLifeAndRestart()
@@ -220,6 +231,117 @@ export default class extends Controller {
     }
 
     this.updateHealthBar()
+  }
+
+  setupEnemies() {
+    const enemyData = this.hasEnemiesValue ? this.enemiesValue : []
+    const enemyUrl = this.hasEnemyUrlValue ? this.enemyUrlValue : ""
+
+    this.enemySprites = []
+
+    if (!enemyUrl || enemyData.length === 0) return
+
+    const parent = this.canvas.parentNode
+
+    enemyData.forEach((enemy, index) => {
+      const el = document.createElement("img")
+      el.src = enemyUrl
+      el.style.position = "absolute"
+      el.style.width = `${this.frameWidth}px`
+      el.style.height = `${this.frameHeight}px`
+      el.style.pointerEvents = "none"
+      el.style.imageRendering = "pixelated"
+      parent.appendChild(el)
+
+      this.enemySprites.push({
+        el,
+        worldX: enemy.x,
+        worldY: enemy.y,
+        direction: "left",
+      })
+    })
+  }
+
+  updateEnemies(dt) {
+    if (!this.enemySprites || this.enemySprites.length === 0) return
+
+    const enemySpeed = 60
+
+    this.enemySprites.forEach((enemy) => {
+      const dx = this.worldX - enemy.worldX
+      if (dx > 0) {
+        enemy.worldX += enemySpeed * dt
+        enemy.direction = "right"
+      } else if (dx < 0) {
+        enemy.worldX -= enemySpeed * dt
+        enemy.direction = "left"
+      }
+
+      this.applyEnemyGravity(enemy, dt)
+      this.checkEnemyCollision(enemy)
+    })
+  }
+
+  applyEnemyGravity(enemy, dt) {
+    if (!enemy.vy) enemy.vy = 0
+
+    enemy.vy += this.gravity * dt
+    enemy.worldY += enemy.vy * dt
+
+    const feetY = enemy.worldY + this.frameHeight
+    const footInset = 6
+    const footLeftX = enemy.worldX + footInset
+    const footRightX = enemy.worldX + this.frameWidth - footInset
+
+    const leftCol = Math.floor(footLeftX / this.tileWidth)
+    const rightCol = Math.floor(footRightX / this.tileWidth)
+    const rowUnder = Math.floor(feetY / this.tileHeight)
+
+    const supported = this.isSolid(rowUnder, leftCol) || this.isSolid(rowUnder, rightCol)
+    if (supported && enemy.vy >= 0) {
+      enemy.worldY = rowUnder * this.tileHeight - this.frameHeight
+      enemy.vy = 0
+    }
+  }
+
+  checkEnemyCollision(enemy) {
+    const playerLeft = this.worldX
+    const playerRight = this.worldX + this.frameWidth
+    const playerTop = this.worldY
+    const playerBottom = this.worldY + this.frameHeight
+
+    const enemyLeft = enemy.worldX
+    const enemyRight = enemy.worldX + this.frameWidth
+    const enemyTop = enemy.worldY
+    const enemyBottom = enemy.worldY + this.frameHeight
+
+    const overlap =
+      playerLeft < enemyRight &&
+      playerRight > enemyLeft &&
+      playerTop < enemyBottom &&
+      playerBottom > enemyTop
+
+    if (overlap) {
+      this.takeDamage(10)
+    }
+  }
+
+  drawEnemies() {
+    if (!this.enemySprites || this.enemySprites.length === 0) return
+
+    const canvasRect = this.canvas.getBoundingClientRect()
+    const parentRect = this.canvas.parentNode.getBoundingClientRect()
+    const offsetX = canvasRect.left - parentRect.left
+    const offsetY = canvasRect.top - parentRect.top
+
+    this.enemySprites.forEach((enemy) => {
+      const screenX = enemy.worldX - this.cameraX
+      const screenY = enemy.worldY - this.cameraY
+
+      enemy.el.style.left = `${offsetX + screenX}px`
+      enemy.el.style.top = `${offsetY + screenY}px`
+      enemy.el.style.transform = enemy.direction === "left" ? "scaleX(-1)" : "scaleX(1)"
+    })
   }
 
   captureStaticFrame() {
@@ -298,6 +420,14 @@ export default class extends Controller {
 
     if (this.healthBarContainer && this.healthBarContainer.parentNode) {
       this.healthBarContainer.remove()
+    }
+
+    if (this.enemySprites) {
+      this.enemySprites.forEach((enemy) => {
+        if (enemy.el && enemy.el.parentNode) {
+          enemy.el.remove()
+        }
+      })
     }
   }
 
@@ -386,6 +516,16 @@ export default class extends Controller {
       return
     }
 
+    // Update damage immunity timer
+    if (this.damageImmune && this.damageImmuneTimer > 0) {
+      this.damageImmuneTimer -= delta
+      if (this.damageImmuneTimer <= 0) {
+        this.damageImmune = false
+        this.damageImmuneTimer = 0
+      }
+    }
+
+    this.updateEnemies(dt)
     this.updateHealthBar()
   }
 
@@ -608,6 +748,7 @@ export default class extends Controller {
       this.spriteEl.style.transform = this.direction === "left" ? "scaleX(-1)" : "scaleX(1)"
     }
 
+    this.drawEnemies()
     this.updateHealthBar()
 
     if (this.levelEnded) {
