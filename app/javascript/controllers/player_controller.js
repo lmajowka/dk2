@@ -237,6 +237,9 @@ export default class extends Controller {
     const enemyData = this.hasEnemiesValue ? this.enemiesValue : []
     const enemyUrl = this.hasEnemyUrlValue ? this.enemyUrlValue : ""
 
+    this.enemyWidth = 96
+    this.enemyHeight = 96
+    this.enemyOffsetY = 32
     this.enemySprites = []
 
     if (!enemyUrl || enemyData.length === 0) return
@@ -247,8 +250,8 @@ export default class extends Controller {
       const el = document.createElement("img")
       el.src = enemyUrl
       el.style.position = "absolute"
-      el.style.width = `${this.frameWidth}px`
-      el.style.height = `${this.frameHeight}px`
+      el.style.width = `${this.enemyWidth}px`
+      el.style.height = `${this.enemyHeight}px`
       el.style.pointerEvents = "none"
       el.style.imageRendering = "pixelated"
       parent.appendChild(el)
@@ -288,10 +291,10 @@ export default class extends Controller {
     enemy.vy += this.gravity * dt
     enemy.worldY += enemy.vy * dt
 
-    const feetY = enemy.worldY + this.frameHeight
+    const feetY = enemy.worldY + this.enemyHeight
     const footInset = 6
     const footLeftX = enemy.worldX + footInset
-    const footRightX = enemy.worldX + this.frameWidth - footInset
+    const footRightX = enemy.worldX + this.enemyWidth - footInset
 
     const leftCol = Math.floor(footLeftX / this.tileWidth)
     const rightCol = Math.floor(footRightX / this.tileWidth)
@@ -299,7 +302,7 @@ export default class extends Controller {
 
     const supported = this.isSolid(rowUnder, leftCol) || this.isSolid(rowUnder, rightCol)
     if (supported && enemy.vy >= 0) {
-      enemy.worldY = rowUnder * this.tileHeight - this.frameHeight
+      enemy.worldY = rowUnder * this.tileHeight - this.enemyHeight
       enemy.vy = 0
     }
   }
@@ -311,9 +314,9 @@ export default class extends Controller {
     const playerBottom = this.worldY + this.frameHeight
 
     const enemyLeft = enemy.worldX
-    const enemyRight = enemy.worldX + this.frameWidth
+    const enemyRight = enemy.worldX + this.enemyWidth
     const enemyTop = enemy.worldY
-    const enemyBottom = enemy.worldY + this.frameHeight
+    const enemyBottom = enemy.worldY + this.enemyHeight
 
     const overlap =
       playerLeft < enemyRight &&
@@ -336,7 +339,7 @@ export default class extends Controller {
 
     this.enemySprites.forEach((enemy) => {
       const screenX = enemy.worldX - this.cameraX
-      const screenY = enemy.worldY - this.cameraY
+      const screenY = enemy.worldY - this.cameraY + this.enemyOffsetY
 
       enemy.el.style.left = `${offsetX + screenX}px`
       enemy.el.style.top = `${offsetY + screenY}px`
