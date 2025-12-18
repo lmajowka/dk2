@@ -1,15 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
 
-const DEFAULT_MAP = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,1,1,1,0]
-]
-
 export default class extends Controller {
   static values = {
     backgroundUrl: String,
@@ -25,22 +15,11 @@ export default class extends Controller {
     enemyUrl: String,
   }
 
-  buildDefaultMap() {
-    const rows = DEFAULT_MAP.length
-    const cols = this.hasLevelColsValue ? this.levelColsValue : (DEFAULT_MAP[0]?.length || 24)
-
-    const grid = Array.from({ length: rows }, () => new Array(cols).fill(0))
-    if (rows > 0) {
-      grid[rows - 1] = new Array(cols).fill(1)
-    }
-    return grid
-  }
-
   connect() {
     this.canvas = this.element
     this.ctx = this.canvas.getContext("2d")
 
-    this.grid = this.hasMapValue ? this.mapValue : this.buildDefaultMap()
+    this.grid = this.mapValue
 
     this.background = new Image()
     this.background.src = this.backgroundUrlValue
