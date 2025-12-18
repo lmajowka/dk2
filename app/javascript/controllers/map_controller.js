@@ -1,14 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
 
-const DEFAULT_MAP = [
-  [0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1],
-  [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1],
-]
-
 export default class extends Controller {
   static values = {
     tileUrls: Array,
@@ -20,7 +11,7 @@ export default class extends Controller {
     this.canvas = this.element
     this.ctx = this.canvas.getContext("2d")
 
-    this.grid = this.hasMapValue ? this.mapValue : DEFAULT_MAP
+    this.grid = this.mapValue
 
     this.tileImages = []
     this.tilesLoaded = 0
