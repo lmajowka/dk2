@@ -223,6 +223,12 @@ export default class extends Controller {
       }
       this.syncHUD()
     }
+
+    // Check for level completion
+    this.syncHUD()
+    if (this.enemies.getCount() === 0) {
+      this.levelEnded = true
+    }
   }
 
   draw() {
@@ -256,6 +262,11 @@ export default class extends Controller {
 
     // Lava
     this.lava.draw(this.ctx)
+
+    // Level ended overlay
+    if (this.levelEnded) {
+      this.hud.drawLevelEndedOverlay(this.ctx, this.canvas.width, this.canvas.height, this.levelEndedTime)
+    }
   }
 
   respawn() {
@@ -287,6 +298,7 @@ export default class extends Controller {
   syncHUD() {
     this.hud.setHealth(this.playerState.health, this.playerState.maxHealth)
     this.hud.setLives(this.playerState.lives, this.playerState.maxLives)
+    this.hud.setEnemyCount(this.enemies.getCount())
   }
 
   drawBottomAlignedCover(img) {

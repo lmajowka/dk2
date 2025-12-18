@@ -107,6 +107,10 @@ export default class EnemyManager {
     })
   }
 
+  getCount() {
+    return this.sprites.length
+  }
+
   destroy() {
     this.sprites.forEach((enemy) => {
       if (enemy.el && enemy.el.parentNode) {

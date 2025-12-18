@@ -5,8 +5,10 @@ export default class HUD {
     this.health = 100
     this.lives = 3
     this.maxLives = 3
+    this.enemyCount = 0
 
     this.setupHealthBar()
+    this.setupEnemyCounter()
   }
 
   setupHealthBar() {
@@ -31,6 +33,24 @@ export default class HUD {
     this.healthBarFill = barFill
   }
 
+  setupEnemyCounter() {
+    const counter = document.createElement("div")
+    counter.style.position = "absolute"
+    counter.style.top = "10px"
+    counter.style.right = "10px"
+    counter.style.padding = "5px 10px"
+    counter.style.backgroundColor = "rgba(0, 0, 0, 0.6)"
+    counter.style.color = "#fff"
+    counter.style.fontFamily = "Arial, sans-serif"
+    counter.style.fontSize = "16px"
+    counter.style.fontWeight = "bold"
+    counter.style.borderRadius = "4px"
+
+    this.parent.appendChild(counter)
+    this.enemyCounterEl = counter
+    this.updateEnemyCounter()
+  }
+
   setHealth(health, maxHealth) {
     this.health = health
     this.maxHealth = maxHealth
@@ -40,6 +60,16 @@ export default class HUD {
   setLives(lives, maxLives) {
     this.lives = lives
     this.maxLives = maxLives
+  }
+
+  setEnemyCount(count) {
+    this.enemyCount = count
+    this.updateEnemyCounter()
+  }
+
+  updateEnemyCounter() {
+    if (!this.enemyCounterEl) return
+    this.enemyCounterEl.textContent = `Enemies: ${this.enemyCount}`
   }
 
   updateHealthBar() {
@@ -84,6 +114,9 @@ export default class HUD {
   destroy() {
     if (this.healthBarContainer && this.healthBarContainer.parentNode) {
       this.healthBarContainer.remove()
+    }
+    if (this.enemyCounterEl && this.enemyCounterEl.parentNode) {
+      this.enemyCounterEl.remove()
     }
   }
 }
