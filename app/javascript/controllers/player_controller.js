@@ -7,6 +7,7 @@ import EnemyManager from "game/enemy_manager"
 import HUD from "game/hud"
 import PropsRenderer from "game/props_renderer"
 import PlayerState from "game/player_state"
+import LavaSystem from "game/lava_system"
 
 export default class extends Controller {
   static values = {
@@ -40,6 +41,8 @@ export default class extends Controller {
     this.onGround = false
     this.levelEnded = false
     this.levelEndedTime = 0
+    this.lavaCooldown = 0
+    this.lavaCooldownDuration = 10000
 
     this.background = new Image()
     this.background.src = this.backgroundUrlValue
@@ -95,6 +98,9 @@ export default class extends Controller {
     // HUD
     this.hud = new HUD(this.parent)
 
+    // Lava
+    this.lava = new LavaSystem(this.canvas, this.parent)
+
     // Player State
     this.playerState = new PlayerState({ maxLives: 3, maxHealth: 100 })
     this.syncHUD()
@@ -110,6 +116,7 @@ export default class extends Controller {
     this.sprite.destroy()
     this.hud.destroy()
     this.enemies.destroy()
+    this.lava.destroy()
   }
 
   loop(timestamp) {
@@ -183,11 +190,19 @@ export default class extends Controller {
       this.tileMap.heightPx || this.canvas.height
     )
 
-    // Goal check
-    if (this.tileMap.checkGoalReached(this.worldX, this.worldY, this.frameWidth, this.frameHeight)) {
-      this.levelEnded = true
-      this.levelEndedTime = 0
+    // Special tile check - trigger lava
+    if (this.lavaCooldown > 0) {
+      this.lavaCooldown -= delta
     }
+    if (this.tileMap.checkGoalReached(this.worldX, this.worldY, this.frameWidth, this.frameHeight)) {
+      if (this.lavaCooldown <= 0 && !this.lava.isActive()) {
+        this.lava.start()
+        this.lavaCooldown = this.lavaCooldownDuration
+      }
+    }
+
+    // Lava update
+    this.lava.update(dt, this.enemies, this.camera.x, this.camera.y)
 
     // Death check
     if (this.worldY > this.tileMap.deathY) {
@@ -239,10 +254,8 @@ export default class extends Controller {
     // Enemies
     this.enemies.draw(this.camera.x, this.camera.y, offsetX, offsetY)
 
-    // Level ended overlay
-    if (this.levelEnded) {
-      this.hud.drawLevelEndedOverlay(this.ctx, this.canvas.width, this.canvas.height, this.levelEndedTime)
-    }
+    // Lava
+    this.lava.draw(this.ctx)
   }
 
   respawn() {
